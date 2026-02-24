@@ -64,6 +64,8 @@ WAF_BYPASS_TAMPERS = {
         "multipartboundary",
         "charunicodeencode",
         "tokenbreaker",        # HackenProof technique
+        "doubleencode",        # Double URL encoding bypass
+        "pathobfuscation",     # Path traversal and normalization bypass
     ],
     5: [
         # + HTTP smuggling and advanced techniques

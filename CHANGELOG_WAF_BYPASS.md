@@ -85,6 +85,18 @@
     - Supports PUT, PATCH, DELETE method spoofing
     - Includes WebSocket upgrade header technique
 
+15. **doubleencode.py**
+    - Double URL encodes payload (%25XX format)
+    - Bypasses WAFs that only decode once
+    - Example: space -> %20 -> %2520
+    - Includes triple encoding and mixed encoding variants
+
+16. **pathobfuscation.py**
+    - Uses path traversal sequences (%2e%2e/ = ../)
+    - X-Original-URL and X-Rewrite-URL header manipulation
+    - Unicode path normalization tricks
+    - Null byte and path parameter injection
+
 #### New CLI Option
 
 - **--waf-bypass=LEVEL** (1-5)

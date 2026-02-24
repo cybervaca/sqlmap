@@ -75,6 +75,8 @@ Automatically applies tamper scripts based on aggressiveness level (1-5):
 | `uninitializedvars` | Bash uninitialized vars ($u) + wildcards for OS injection |
 | `tabsandlinefeeds` | Tabs (%09) instead of spaces for regex bypass |
 | `methodoverride` | HTTP method override (PUT, PATCH, DELETE) bypass |
+| `doubleencode` | Double URL encoding (%2520) to bypass normalization |
+| `pathobfuscation` | Path traversal (%2e%2e/) and X-Original-URL bypass |
 
 ### Usage Examples
 
