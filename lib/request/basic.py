@@ -406,7 +406,9 @@ def processResponse(page, responseHeaders, code=None, status=None):
                     for waf in set(identYwaf.non_blind):
                         if waf not in kb.identifiedWafs:
                             kb.identifiedWafs.add(waf)
-                            errMsg = "WAF/IPS identified as '%s'" % identYwaf.format_name(waf)
+                            # Author: CyberVaca - Format WAF name in bold red for visibility
+                            wafName = identYwaf.format_name(waf)
+                            errMsg = "WAF/IPS identified as '\x1b[1;91m%s\x1b[0m'" % wafName
                             singleTimeLogMessage(errMsg, logging.CRITICAL)
             except Exception as ex:
                 singleTimeWarnMessage("internal error occurred in WAF/IPS detection ('%s')" % getSafeExString(ex))
