@@ -45,17 +45,19 @@ This fork includes advanced WAF bypass techniques based on recent security resea
 
 ### New `--waf-bypass` Option
 
-Automatically applies tamper scripts based on aggressiveness level (1-5):
+Smart WAF detection with optimized tamper selection (max 3-4 tampers):
 
-    python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3
+    python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto
+    python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=cloudflare
 
-| Level | Techniques | Target WAFs |
-|-------|-----------|-------------|
-| 1 | Basic encoding, case randomization | Simple pattern-matching WAFs |
-| 2 | + Oversized requests, header spoofing | Cloudflare, AWS WAF, GCP |
-| 3 | + Parameter pollution, advanced obfuscation | ModSecurity, Imperva |
-| 4 | + Content-Type confusion, Unicode normalization | ML-based WAFs |
-| 5 | + HTTP smuggling, all techniques | Maximum evasion |
+| Mode | Description |
+|------|-------------|
+| `auto` | Auto-detect WAF and apply optimal tampers |
+| `cloudflare` | 8KB body limit bypass + obfuscation |
+| `aws` | AWS WAF specific bypass |
+| `modsecurity` | Comment-based + version keywords |
+| `imperva` | Unicode + header manipulation |
+| `akamai` | Oversized + header spoofing |
 
 ### New Tamper Scripts
 

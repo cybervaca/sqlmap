@@ -747,17 +747,22 @@ def _setDBMS():
 
 def _setWafBypassLevel():
     """
-    Sets tamper scripts based on WAF bypass level
+    Sets tamper scripts based on WAF bypass mode
     
     # Author: CyberVaca , Luis Vacas de Santos
     # Twitter: https://twitter.com/CyberVaca_
     # Based on the Alamot's original code
+    
+    Accepts:
+        - "auto": Auto-detect WAF and apply specific tampers
+        - WAF name: "cloudflare", "modsecurity", "aws", etc.
+        - Integer (legacy): 1-5 for backward compatibility
     """
 
     if conf.wafBypassLevel:
-        if conf.wafBypassLevel < 1 or conf.wafBypassLevel > 5:
-            errMsg = "WAF bypass level must be between 1 and 5"
-            raise SqlmapValueException(errMsg)
+        # Convert to string if integer (legacy support)
+        if isinstance(conf.wafBypassLevel, int):
+            conf.wafBypassLevel = str(conf.wafBypassLevel)
         
         applyWafBypassLevel()
 

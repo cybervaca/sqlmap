@@ -8,199 +8,248 @@
 Copyright (c) 2006-2026 sqlmap developers (https://sqlmap.org)
 See the file 'LICENSE' for copying permission
 
-WAF Bypass Level Handler
+WAF Bypass Handler - Smart WAF Detection Based
 
 This module provides automatic tamper script selection based on the
---waf-bypass level option. Higher levels apply more aggressive evasion
-techniques.
+detected WAF. It uses sqlmap's identYwaf detection (kb.identifiedWafs)
+to select optimal tamper scripts (2-4 max) for each specific WAF.
 
-Levels:
-    1 - Basic: Standard encoding and case manipulation
-    2 - Moderate: + Oversized requests, header manipulation
-    3 - Aggressive: + Chunked encoding, parameter pollution
-    4 - Advanced: + Content-Type confusion, Unicode normalization
-    5 - Maximum: All techniques combined including HTTP smuggling
+Usage:
+    --waf-bypass=auto     Auto-detect WAF and apply specific tampers
+    --waf-bypass=cloudflare   Force Cloudflare-specific tampers
+    --waf-bypass=modsecurity  Force ModSecurity-specific tampers
+    etc.
 
 Reference:
     * https://www.blackhillsinfosec.com/bypassing-wafs-using-oversized-requests/
-    * https://www.imperva.com/blog/smuggling-requests-with-chunked-extensions-a-new-http-desync-trick/
-    * https://medium.com/@gasmask/bypassing-wafs-in-2025-new-techniques-and-evasion-tactics
+    * https://hacken.io/discover/how-to-bypass-waf-hackenproof-cheat-sheet/
 """
 
 from lib.core.data import conf
+from lib.core.data import kb
 from lib.core.data import logger
 
-# Tamper scripts organized by bypass level
-WAF_BYPASS_TAMPERS = {
-    1: [
-        # Basic encoding and obfuscation
-        "randomcase",
-        "space2comment",
-        "between",
-    ],
-    2: [
-        # + Oversized requests and header manipulation
-        "oversizedrequest",
-        "xforwardedfor",
-        "randomcomments",
-        "charencode",
-        "scientificnotation",  # e notation bypass (ptswarm technique)
-        "tabsandlinefeeds",    # HackenProof technique
-        "methodoverride",      # HTTP method override (PUT, PATCH, DELETE)
-    ],
-    3: [
-        # + Chunked encoding and parameter pollution
-        "parampollutionfull",
-        "space2morecomment",
-        "apostrophemask",
-        "equaltolike",
-        "junkchars",           # HackenProof technique
-        "linebreaks",          # HackenProof technique (CR/LF)
-    ],
-    4: [
-        # + Content-Type confusion and Unicode
-        "contenttypeconfusion",
-        "unicodenormalize",
-        "multipartboundary",
-        "charunicodeencode",
-        "tokenbreaker",        # HackenProof technique
-        "doubleencode",        # Double URL encoding bypass
-    ],
-    5: [
-        # + HTTP smuggling and advanced techniques
-        "chunkextensionsmuggle",
-        "slowrequest",
-        "base64encode",
-        "percentage",
-    ],
+# Maximum number of tampers to apply (to avoid sqlmap warning)
+MAX_TAMPERS = 4
+
+# WAF-specific tamper configurations
+# Each WAF has optimized tampers based on known bypass techniques
+WAF_TAMPERS = {
+    # Cloud WAFs
+    "cloudflare": {
+        "tampers": ["oversizedrequest", "randomcase", "space2comment"],
+        "notes": "8KB body limit bypass, basic obfuscation"
+    },
+    "aws": {
+        "tampers": ["oversizedrequest", "randomcase", "between"],
+        "notes": "8KB body limit, AWS WAF rule bypass"
+    },
+    "awswaf": {
+        "tampers": ["oversizedrequest", "randomcase", "between"],
+        "notes": "Same as AWS"
+    },
+    "google": {
+        "tampers": ["oversizedrequest", "randomcase", "charencode"],
+        "notes": "8KB limit, Google Cloud Armor"
+    },
+    "googlecloudarmor": {
+        "tampers": ["oversizedrequest", "randomcase", "charencode"],
+        "notes": "Same as Google"
+    },
+    "azure": {
+        "tampers": ["oversizedrequest", "xforwardedfor", "randomcase"],
+        "notes": "128KB Front Door limit"
+    },
+    "azurewaf": {
+        "tampers": ["oversizedrequest", "xforwardedfor", "randomcase"],
+        "notes": "Same as Azure"
+    },
+    "akamai": {
+        "tampers": ["oversizedrequest", "xforwardedfor", "apostrophemask"],
+        "notes": "Header manipulation + encoding"
+    },
+    
+    # Commercial WAFs
+    "modsecurity": {
+        "tampers": ["space2comment", "randomcase", "versionedmorekeywords"],
+        "notes": "Comment-based bypass, MySQL version comments"
+    },
+    "owasp": {
+        "tampers": ["space2comment", "randomcase", "versionedmorekeywords"],
+        "notes": "Same as ModSecurity (OWASP CRS)"
+    },
+    "imperva": {
+        "tampers": ["xforwardedfor", "unicodenormalize", "space2morecomment"],
+        "notes": "Header spoofing + Unicode bypass"
+    },
+    "incapsula": {
+        "tampers": ["xforwardedfor", "unicodenormalize", "space2morecomment"],
+        "notes": "Same as Imperva"
+    },
+    "f5": {
+        "tampers": ["parampollutionfull", "randomcase", "space2comment"],
+        "notes": "Parameter pollution effective"
+    },
+    "bigip": {
+        "tampers": ["parampollutionfull", "randomcase", "space2comment"],
+        "notes": "Same as F5"
+    },
+    "fortinet": {
+        "tampers": ["oversizedrequest", "randomcase", "charencode"],
+        "notes": "64MB limit - very high, use encoding"
+    },
+    "fortigate": {
+        "tampers": ["oversizedrequest", "randomcase", "charencode"],
+        "notes": "Same as Fortinet"
+    },
+    "sucuri": {
+        "tampers": ["oversizedrequest", "xforwardedfor", "randomcase"],
+        "notes": "1.25MB limit, header manipulation"
+    },
+    "barracuda": {
+        "tampers": ["space2comment", "randomcase", "between"],
+        "notes": "Comment-based bypass"
+    },
+    "citrix": {
+        "tampers": ["xforwardedfor", "randomcase", "charencode"],
+        "notes": "NetScaler WAF"
+    },
+    "netscaler": {
+        "tampers": ["xforwardedfor", "randomcase", "charencode"],
+        "notes": "Same as Citrix"
+    },
+    
+    # Open source / Other
+    "wordfence": {
+        "tampers": ["randomcase", "space2comment", "between"],
+        "notes": "WordPress WAF"
+    },
+    "comodo": {
+        "tampers": ["randomcase", "charencode", "space2comment"],
+        "notes": "Basic encoding bypass"
+    },
+    "wallarm": {
+        "tampers": ["unicodenormalize", "randomcase", "doubleencode"],
+        "notes": "ML-based, use Unicode tricks"
+    },
+    "reblaze": {
+        "tampers": ["xforwardedfor", "randomcase", "space2comment"],
+        "notes": "Header manipulation"
+    },
+    "radware": {
+        "tampers": ["oversizedrequest", "randomcase", "charencode"],
+        "notes": "AppWall bypass"
+    },
+    "sophos": {
+        "tampers": ["randomcase", "space2comment", "between"],
+        "notes": "Basic obfuscation"
+    },
+    "paloalto": {
+        "tampers": ["randomcase", "charencode", "space2morecomment"],
+        "notes": "PAN-OS WAF"
+    },
+    
+    # Generic / Unknown WAF
+    "generic": {
+        "tampers": ["randomcase", "space2comment", "between"],
+        "notes": "Generic bypass for unknown WAFs"
+    },
 }
 
-# Recommended combinations for specific WAFs
-WAF_SPECIFIC_TAMPERS = {
-    "cloudflare": [
-        "oversizedrequest",
-        "xforwardedfor",
-        "randomcase",
-        "space2comment",
-        "charunicodeencode",
-    ],
-    "aws": [
-        "oversizedrequest",
-        "contenttypeconfusion",
-        "randomcase",
-        "between",
-    ],
-    "modsecurity": [
-        "space2comment",
-        "randomcase",
-        "charencode",
-        "versionedmorekeywords",
-        "chunkextensionsmuggle",
-    ],
-    "imperva": [
-        "xforwardedfor",
-        "randomcase",
-        "space2morecomment",
-        "unicodenormalize",
-    ],
-    "akamai": [
-        "oversizedrequest",
-        "xforwardedfor",
-        "randomcase",
-        "apostrophemask",
-    ],
-    "f5": [
-        "contenttypeconfusion",
-        "parampollutionfull",
-        "randomcase",
-        "space2comment",
-    ],
-    "fortinet": [
-        "oversizedrequest",  # 64MB limit - very high
-        "randomcase",
-        "charencode",
-    ],
-    "sucuri": [
-        "oversizedrequest",  # 1.25MB limit
-        "xforwardedfor",
-        "randomcase",
-    ],
-    "google": [
-        "oversizedrequest",  # 8KB limit
-        "contenttypeconfusion",
-        "randomcase",
-    ],
-    "azure": [
-        "oversizedrequest",  # 128KB for Front Door
-        "xforwardedfor",
-        "randomcase",
-    ],
+# Aliases for WAF names (identYwaf may use different names)
+WAF_ALIASES = {
+    "cloudflare inc.": "cloudflare",
+    "amazon web services": "aws",
+    "amazon": "aws",
+    "microsoft azure": "azure",
+    "google cloud": "google",
+    "mod_security": "modsecurity",
+    "modsec": "modsecurity",
+    "imperva incapsula": "imperva",
+    "f5 networks": "f5",
+    "f5 big-ip": "bigip",
+    "fortinet fortigate": "fortinet",
+    "citrix netscaler": "citrix",
+    "palo alto": "paloalto",
 }
 
 
-def getWafBypassTampers(level):
+def normalizeWafName(waf_name):
     """
-    Returns the list of tamper scripts to use for the given WAF bypass level
+    Normalizes WAF name to match our configuration keys
+    """
+    if not waf_name:
+        return "generic"
+    
+    waf_lower = waf_name.lower().strip()
+    
+    # Check aliases first
+    for alias, normalized in WAF_ALIASES.items():
+        if alias in waf_lower or waf_lower in alias:
+            return normalized
+    
+    # Check direct match
+    for waf_key in WAF_TAMPERS.keys():
+        if waf_key in waf_lower or waf_lower in waf_key:
+            return waf_key
+    
+    return "generic"
+
+
+def getWafTampers(waf_name):
+    """
+    Returns the optimal tamper scripts for a specific WAF
     
     Args:
-        level: Integer from 1-5 indicating bypass aggressiveness
+        waf_name: Name of the WAF (from identYwaf or user input)
         
     Returns:
-        List of tamper script names to apply
+        List of tamper script names (max MAX_TAMPERS)
     """
+    normalized = normalizeWafName(waf_name)
     
-    if not level or level < 1:
+    if normalized in WAF_TAMPERS:
+        tampers = WAF_TAMPERS[normalized]["tampers"][:MAX_TAMPERS]
+        return tampers
+    
+    # Default to generic
+    return WAF_TAMPERS["generic"]["tampers"][:MAX_TAMPERS]
+
+
+def getDetectedWafTampers():
+    """
+    Returns tampers based on WAFs detected by identYwaf (kb.identifiedWafs)
+    
+    If multiple WAFs detected, combines unique tampers up to MAX_TAMPERS
+    """
+    detected_wafs = getattr(kb, 'identifiedWafs', set())
+    
+    if not detected_wafs:
         return []
     
-    # Cap at level 5
-    level = min(level, 5)
+    all_tampers = []
     
-    # Accumulate tampers from level 1 up to the specified level
-    tampers = []
-    for lvl in range(1, level + 1):
-        tampers.extend(WAF_BYPASS_TAMPERS.get(lvl, []))
+    for waf in detected_wafs:
+        tampers = getWafTampers(waf)
+        for t in tampers:
+            if t not in all_tampers:
+                all_tampers.append(t)
+                if len(all_tampers) >= MAX_TAMPERS:
+                    break
+        if len(all_tampers) >= MAX_TAMPERS:
+            break
     
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_tampers = []
-    for t in tampers:
-        if t not in seen:
-            seen.add(t)
-            unique_tampers.append(t)
-    
-    return unique_tampers
-
-
-def getWafSpecificTampers(waf_name):
-    """
-    Returns recommended tamper scripts for a specific WAF
-    
-    Args:
-        waf_name: Name of the WAF (e.g., "cloudflare", "aws", "modsecurity")
-        
-    Returns:
-        List of tamper script names optimized for that WAF
-    """
-    
-    waf_name = waf_name.lower().strip()
-    
-    # Try exact match first
-    if waf_name in WAF_SPECIFIC_TAMPERS:
-        return WAF_SPECIFIC_TAMPERS[waf_name]
-    
-    # Try partial match
-    for waf, tampers in WAF_SPECIFIC_TAMPERS.items():
-        if waf in waf_name or waf_name in waf:
-            return tampers
-    
-    # Default to level 3 tampers if WAF not recognized
-    return getWafBypassTampers(3)
+    return all_tampers
 
 
 def applyWafBypassLevel():
     """
-    Applies the WAF bypass tamper scripts based on conf.wafBypassLevel
-    This should be called during option initialization
+    Applies WAF bypass tamper scripts based on conf.wafBypassLevel
+    
+    Values:
+        - "auto" or 0: Use detected WAF (kb.identifiedWafs)
+        - WAF name (string): Use specific WAF tampers
+        - Integer 1-5: Legacy mode (not recommended)
     """
     
     level = conf.get("wafBypassLevel")
@@ -208,7 +257,45 @@ def applyWafBypassLevel():
     if not level:
         return
     
-    tampers = getWafBypassTampers(level)
+    tampers = []
+    waf_info = ""
+    
+    # Handle different input types
+    if isinstance(level, str):
+        level_lower = level.lower().strip()
+        
+        if level_lower == "auto":
+            # Auto-detect from kb.identifiedWafs
+            tampers = getDetectedWafTampers()
+            if tampers:
+                detected = list(getattr(kb, 'identifiedWafs', set()))
+                waf_info = "detected WAF(s): %s" % ', '.join(detected[:3])
+            else:
+                # No WAF detected yet, use generic
+                tampers = WAF_TAMPERS["generic"]["tampers"][:MAX_TAMPERS]
+                waf_info = "no WAF detected, using generic"
+        else:
+            # Specific WAF name provided
+            tampers = getWafTampers(level_lower)
+            waf_info = "WAF: %s" % normalizeWafName(level_lower)
+    
+    elif isinstance(level, int):
+        if level == 0:
+            # Same as "auto"
+            tampers = getDetectedWafTampers()
+            if not tampers:
+                tampers = WAF_TAMPERS["generic"]["tampers"][:MAX_TAMPERS]
+            waf_info = "auto mode"
+        else:
+            # Legacy numeric level - map to generic with increasing tampers
+            # Level 1-2: basic, Level 3-4: moderate, Level 5: aggressive
+            if level <= 2:
+                tampers = ["randomcase", "space2comment", "between"]
+            elif level <= 4:
+                tampers = ["randomcase", "space2comment", "oversizedrequest", "xforwardedfor"]
+            else:
+                tampers = ["randomcase", "space2comment", "oversizedrequest", "unicodenormalize"]
+            waf_info = "legacy level %d" % level
     
     if not tampers:
         return
@@ -216,58 +303,67 @@ def applyWafBypassLevel():
     # Get existing tampers
     existing = conf.get("tamper") or ""
     if existing:
-        existing_list = [t.strip() for t in existing.split(',')]
+        existing_list = [t.strip() for t in existing.split(',') if t.strip()]
     else:
         existing_list = []
     
-    # Merge with WAF bypass tampers (WAF bypass tampers go first)
+    # Merge: WAF bypass tampers first, then existing (avoid duplicates)
     all_tampers = tampers + [t for t in existing_list if t not in tampers]
     
     # Update conf
     conf.tamper = ','.join(all_tampers)
     
-    infoMsg = "WAF bypass level %d: applying tamper scripts: %s" % (level, ', '.join(tampers))
+    infoMsg = "WAF bypass (%s): applying %d tampers: %s" % (
+        waf_info, len(tampers), ', '.join(tampers)
+    )
     logger.info(infoMsg)
 
 
 def printWafBypassHelp():
     """
-    Prints help information about WAF bypass levels
+    Prints help information about WAF bypass options
     """
     
     help_text = """
-WAF Bypass Levels:
-==================
-
-Level 1 (Basic):
-    Tampers: randomcase, space2comment, between
-    Target: Basic WAFs with simple pattern matching
-
-Level 2 (Moderate):
-    Tampers: + oversizedrequest, xforwardedfor, randomcomments, charencode
-    Target: Cloudflare (free), AWS WAF, Google Cloud Armor
-
-Level 3 (Aggressive):
-    Tampers: + parampollutionfull, space2morecomment, apostrophemask, equaltolike
-    Target: ModSecurity, Imperva, most commercial WAFs
-
-Level 4 (Advanced):
-    Tampers: + contenttypeconfusion, unicodenormalize, multipartboundary, charunicodeencode
-    Target: WAFs with ML-based detection, behavioral analysis
-
-Level 5 (Maximum):
-    Tampers: + chunkextensionsmuggle, slowrequest, base64encode, percentage
-    Target: All WAFs, includes HTTP smuggling techniques
+WAF Bypass Options:
+===================
 
 Usage:
-    sqlmap -u "http://target.com/?id=1" --waf-bypass=3
+    --waf-bypass=auto           Auto-detect WAF and apply optimal tampers
+    --waf-bypass=cloudflare     Apply Cloudflare-specific tampers
+    --waf-bypass=modsecurity    Apply ModSecurity-specific tampers
+    --waf-bypass=aws            Apply AWS WAF-specific tampers
+    etc.
 
-WAF-Specific Recommendations:
-    Cloudflare: --waf-bypass=2 (8KB body limit bypass)
-    AWS WAF:    --waf-bypass=2 (8KB body limit bypass)
-    ModSecurity: --waf-bypass=3 (chunked + obfuscation)
-    Imperva:    --waf-bypass=4 (Unicode + headers)
-    Akamai:     --waf-bypass=3 (oversized + headers)
+Supported WAFs:
 """
     
+    for waf, config in sorted(WAF_TAMPERS.items()):
+        if waf != "generic":
+            help_text += "    %-20s %s\n" % (waf, config["notes"])
+    
+    help_text += """
+Examples:
+    # Auto-detect WAF and apply bypass
+    sqlmap -u "http://target.com/?id=1" --waf-bypass=auto
+
+    # Force Cloudflare bypass (8KB body limit)
+    sqlmap -u "http://target.com/?id=1" --waf-bypass=cloudflare
+
+    # Force ModSecurity bypass
+    sqlmap -u "http://target.com/?id=1" --waf-bypass=modsecurity
+
+Notes:
+    - Maximum %d tampers are applied to avoid conflicts
+    - Use 'auto' to let sqlmap detect the WAF first
+    - Combine with --chunked for additional evasion
+""" % MAX_TAMPERS
+    
     return help_text
+
+
+def listSupportedWafs():
+    """
+    Returns list of supported WAF names
+    """
+    return sorted([w for w in WAF_TAMPERS.keys() if w != "generic"])

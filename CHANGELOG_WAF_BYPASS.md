@@ -6,6 +6,41 @@
 
 ---
 
+## [2.0.0] - 2026-02-24 - Smart WAF Detection
+
+### Major Refactor
+
+The `--waf-bypass` option now uses **smart WAF detection** instead of cumulative levels.
+
+**Why this change:**
+- Previous system loaded 16+ tampers at level 3 (sqlmap warning: "using too many tamper scripts")
+- New system applies **maximum 4 tampers** optimized for each specific WAF
+- Uses sqlmap's identYwaf detection (`kb.identifiedWafs`) for auto mode
+
+### New Usage:
+```bash
+# Auto-detect WAF and apply optimal tampers (max 3-4)
+sqlmap -u "http://target.com/?id=1" --waf-bypass=auto
+
+# Force specific WAF bypass
+sqlmap -u "http://target.com/?id=1" --waf-bypass=cloudflare
+sqlmap -u "http://target.com/?id=1" --waf-bypass=modsecurity
+sqlmap -u "http://target.com/?id=1" --waf-bypass=aws
+```
+
+### Supported WAFs:
+| Category | WAFs |
+|----------|------|
+| Cloud | cloudflare, aws, google, azure, akamai |
+| Commercial | modsecurity, imperva, f5, fortinet, sucuri, barracuda, citrix |
+| Other | wordfence, comodo, wallarm, reblaze, radware, sophos, paloalto |
+
+### Removed (non-SQLi):
+- `pathobfuscation.py` - For LFI/Access Control, not SQLi
+- `uninitializedvars.py` - For OS Command Injection, not SQLi
+
+---
+
 ## [1.0.0] - 2026-02-24
 
 ### Added

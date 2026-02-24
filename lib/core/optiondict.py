@@ -73,7 +73,7 @@ optDict = {
         "chunked": "boolean",
         "hpp": "boolean",
         "evalCode": "string",
-        "wafBypassLevel": "integer",
+        "wafBypassLevel": "string",
     },
 
     "Optimization": {
