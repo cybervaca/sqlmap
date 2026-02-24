@@ -79,6 +79,12 @@
     - Breaks regex expecting whitespace characters
     - Reference: HackenProof WAF Bypass Cheat Sheet
 
+14. **methodoverride.py**
+    - Uses HTTP method override headers (X-HTTP-Method-Override, X-Method-Override)
+    - Bypasses WAFs that only inspect GET/POST requests
+    - Supports PUT, PATCH, DELETE method spoofing
+    - Includes WebSocket upgrade header technique
+
 #### New CLI Option
 
 - **--waf-bypass=LEVEL** (1-5)

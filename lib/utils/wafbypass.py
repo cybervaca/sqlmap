@@ -46,6 +46,7 @@ WAF_BYPASS_TAMPERS = {
         "charencode",
         "scientificnotation",  # e notation bypass (ptswarm technique)
         "tabsandlinefeeds",    # HackenProof technique
+        "methodoverride",      # HTTP method override (PUT, PATCH, DELETE)
     ],
     3: [
         # + Chunked encoding and parameter pollution

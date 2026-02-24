@@ -74,6 +74,7 @@ Automatically applies tamper scripts based on aggressiveness level (1-5):
 | `tokenbreaker` | Token breaker techniques (brackets, semicolons) |
 | `uninitializedvars` | Bash uninitialized vars ($u) + wildcards for OS injection |
 | `tabsandlinefeeds` | Tabs (%09) instead of spaces for regex bypass |
+| `methodoverride` | HTTP method override (PUT, PATCH, DELETE) bypass |
 
 ### Usage Examples
 
