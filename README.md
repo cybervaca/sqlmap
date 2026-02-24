@@ -36,6 +36,57 @@ To get a list of all options and switches use:
 You can find a sample run [here](https://asciinema.org/a/46601).
 To get an overview of sqlmap capabilities, a list of supported features, and a description of all options and switches, along with examples, you are advised to consult the [user's manual](https://github.com/sqlmapproject/sqlmap/wiki/Usage).
 
+WAF Bypass Enhancements
+----
+
+**Author: CyberVaca, Luis Vacas de Santos** ([@CyberVaca_](https://twitter.com/CyberVaca_))
+
+This fork includes advanced WAF bypass techniques based on recent security research:
+
+### New `--waf-bypass` Option
+
+Automatically applies tamper scripts based on aggressiveness level (1-5):
+
+    python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3
+
+| Level | Techniques | Target WAFs |
+|-------|-----------|-------------|
+| 1 | Basic encoding, case randomization | Simple pattern-matching WAFs |
+| 2 | + Oversized requests, header spoofing | Cloudflare, AWS WAF, GCP |
+| 3 | + Parameter pollution, advanced obfuscation | ModSecurity, Imperva |
+| 4 | + Content-Type confusion, Unicode normalization | ML-based WAFs |
+| 5 | + HTTP smuggling, all techniques | Maximum evasion |
+
+### New Tamper Scripts
+
+| Script | Description |
+|--------|-------------|
+| `oversizedrequest` | Bypass WAF body size limits (8KB-64MB) |
+| `chunkextensionsmuggle` | HTTP desync via malformed chunk extensions |
+| `parampollutionfull` | Advanced HTTP Parameter Pollution |
+| `contenttypeconfusion` | Content-Type header manipulation |
+| `unicodenormalize` | Unicode Fullwidth character conversion |
+| `multipartboundary` | Multipart boundary manipulation |
+| `slowrequest` | Low-and-slow timing evasion |
+
+### Usage Examples
+
+```bash
+# Bypass Cloudflare/AWS (8KB body limit)
+python sqlmap.py -u "http://target.com/?id=1" --tamper=oversizedrequest
+
+# HTTP smuggling with chunked encoding
+python sqlmap.py -u "http://target.com/?id=1" --chunked --tamper=chunkextensionsmuggle
+
+# Unicode bypass for pattern-matching WAFs
+python sqlmap.py -u "http://target.com/?id=1" --tamper=unicodenormalize
+
+# Combined techniques
+python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3 --chunked
+```
+
+See [CHANGELOG_WAF_BYPASS.md](CHANGELOG_WAF_BYPASS.md) for full details.
+
 Links
 ----
 

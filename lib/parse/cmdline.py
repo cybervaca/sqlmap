@@ -303,6 +303,12 @@ def cmdLineParser(argv=None):
         request.add_argument("--hpp", dest="hpp", action="store_true",
             help="Use HTTP parameter pollution method")
 
+        # Author: CyberVaca , Luis Vacas de Santos
+        # Twitter: https://twitter.com/CyberVaca_
+        # Based on the Alamot's original code
+        request.add_argument("--waf-bypass", dest="wafBypassLevel", type=int,
+            help="WAF bypass level (1-5, higher = more aggressive evasion techniques)")
+
         request.add_argument("--eval", dest="evalCode",
             help="Evaluate provided Python code before the request (e.g. \"import hashlib;id2=hashlib.md5(id).hexdigest()\")")
 

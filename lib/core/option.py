@@ -153,6 +153,7 @@ from lib.utils.deps import checkDependencies
 from lib.utils.har import HTTPCollectorFactory
 from lib.utils.purge import purge
 from lib.utils.search import search
+from lib.utils.wafbypass import applyWafBypassLevel
 from thirdparty import six
 from thirdparty.keepalive import keepalive
 from thirdparty.multipart import multipartpost
@@ -743,6 +744,22 @@ def _setDBMS():
             conf.dbms = dbms
 
             break
+
+def _setWafBypassLevel():
+    """
+    Sets tamper scripts based on WAF bypass level
+    
+    # Author: CyberVaca , Luis Vacas de Santos
+    # Twitter: https://twitter.com/CyberVaca_
+    # Based on the Alamot's original code
+    """
+
+    if conf.wafBypassLevel:
+        if conf.wafBypassLevel < 1 or conf.wafBypassLevel > 5:
+            errMsg = "WAF bypass level must be between 1 and 5"
+            raise SqlmapValueException(errMsg)
+        
+        applyWafBypassLevel()
 
 def _listTamperingFunctions():
     """
@@ -2955,6 +2972,7 @@ def init():
     _setDNSServer()
     _adjustLoggingFormatter()
     _setMultipleTargets()
+    _setWafBypassLevel()
     _listTamperingFunctions()
     _setTamperingFunctions()
     _setPreprocessFunctions()
