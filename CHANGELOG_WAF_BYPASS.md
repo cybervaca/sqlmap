@@ -69,33 +69,22 @@
     - Adds uncontexted brackets, semicolons to break parsing
     - Reference: HackenProof WAF Bypass Cheat Sheet
 
-12. **uninitializedvars.py**
-    - Uses uninitialized bash variables ($u) for OS command injection bypass
-    - Includes wildcard obfuscation (/???/??t for /bin/cat)
-    - Reference: HackenProof WAF Bypass Cheat Sheet
-
-13. **tabsandlinefeeds.py**
+12. **tabsandlinefeeds.py**
     - Uses tabs (%09) and vertical tabs (%0B) instead of spaces
     - Breaks regex expecting whitespace characters
     - Reference: HackenProof WAF Bypass Cheat Sheet
 
-14. **methodoverride.py**
+13. **methodoverride.py**
     - Uses HTTP method override headers (X-HTTP-Method-Override, X-Method-Override)
     - Bypasses WAFs that only inspect GET/POST requests
     - Supports PUT, PATCH, DELETE method spoofing
     - Includes WebSocket upgrade header technique
 
-15. **doubleencode.py**
+14. **doubleencode.py**
     - Double URL encodes payload (%25XX format)
     - Bypasses WAFs that only decode once
     - Example: space -> %20 -> %2520
     - Includes triple encoding and mixed encoding variants
-
-16. **pathobfuscation.py**
-    - Uses path traversal sequences (%2e%2e/ = ../)
-    - X-Original-URL and X-Rewrite-URL header manipulation
-    - Unicode path normalization tricks
-    - Null byte and path parameter injection
 
 #### New CLI Option
 

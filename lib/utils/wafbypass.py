@@ -65,7 +65,6 @@ WAF_BYPASS_TAMPERS = {
         "charunicodeencode",
         "tokenbreaker",        # HackenProof technique
         "doubleencode",        # Double URL encoding bypass
-        "pathobfuscation",     # Path traversal and normalization bypass
     ],
     5: [
         # + HTTP smuggling and advanced techniques
@@ -73,7 +72,6 @@ WAF_BYPASS_TAMPERS = {
         "slowrequest",
         "base64encode",
         "percentage",
-        "uninitializedvars",   # HackenProof technique (for OS command injection)
     ],
 }
 
