@@ -54,6 +54,31 @@
    - "Low and slow" attack technique for timing-based evasion
    - Targets: WAFs with behavioral/timing analysis
 
+9. **junkchars.py**
+   - Adds junk characters (+-+-1-+-+, !#$%&) to confuse regex-based WAFs
+   - Wraps SQL keywords with noise characters
+   - Reference: HackenProof WAF Bypass Cheat Sheet
+
+10. **linebreaks.py**
+    - Uses CR/LF (%0D%0A) to break WAF regex patterns
+    - Inserts line breaks before SQL keywords
+    - Reference: HackenProof WAF Bypass Cheat Sheet
+
+11. **tokenbreaker.py**
+    - Uses token breaker techniques to confuse WAF tokenizers
+    - Adds uncontexted brackets, semicolons to break parsing
+    - Reference: HackenProof WAF Bypass Cheat Sheet
+
+12. **uninitializedvars.py**
+    - Uses uninitialized bash variables ($u) for OS command injection bypass
+    - Includes wildcard obfuscation (/???/??t for /bin/cat)
+    - Reference: HackenProof WAF Bypass Cheat Sheet
+
+13. **tabsandlinefeeds.py**
+    - Uses tabs (%09) and vertical tabs (%0B) instead of spaces
+    - Breaks regex expecting whitespace characters
+    - Reference: HackenProof WAF Bypass Cheat Sheet
+
 #### New CLI Option
 
 - **--waf-bypass=LEVEL** (1-5)

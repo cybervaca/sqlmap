@@ -45,6 +45,7 @@ WAF_BYPASS_TAMPERS = {
         "randomcomments",
         "charencode",
         "scientificnotation",  # e notation bypass (ptswarm technique)
+        "tabsandlinefeeds",    # HackenProof technique
     ],
     3: [
         # + Chunked encoding and parameter pollution
@@ -52,6 +53,8 @@ WAF_BYPASS_TAMPERS = {
         "space2morecomment",
         "apostrophemask",
         "equaltolike",
+        "junkchars",           # HackenProof technique
+        "linebreaks",          # HackenProof technique (CR/LF)
     ],
     4: [
         # + Content-Type confusion and Unicode
@@ -59,6 +62,7 @@ WAF_BYPASS_TAMPERS = {
         "unicodenormalize",
         "multipartboundary",
         "charunicodeencode",
+        "tokenbreaker",        # HackenProof technique
     ],
     5: [
         # + HTTP smuggling and advanced techniques
@@ -66,6 +70,7 @@ WAF_BYPASS_TAMPERS = {
         "slowrequest",
         "base64encode",
         "percentage",
+        "uninitializedvars",   # HackenProof technique (for OS command injection)
     ],
 }
 

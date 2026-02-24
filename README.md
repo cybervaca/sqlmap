@@ -69,6 +69,11 @@ Automatically applies tamper scripts based on aggressiveness level (1-5):
 | `unicodenormalize` | Unicode Fullwidth character conversion |
 | `multipartboundary` | Multipart boundary manipulation |
 | `slowrequest` | Low-and-slow timing evasion |
+| `junkchars` | Junk characters (+-+-1-+-+) to confuse regex WAFs |
+| `linebreaks` | CR/LF (%0D%0A) to break WAF regex patterns |
+| `tokenbreaker` | Token breaker techniques (brackets, semicolons) |
+| `uninitializedvars` | Bash uninitialized vars ($u) + wildcards for OS injection |
+| `tabsandlinefeeds` | Tabs (%09) instead of spaces for regex bypass |
 
 ### Usage Examples
 
@@ -84,6 +89,15 @@ python sqlmap.py -u "http://target.com/?id=1" --tamper=unicodenormalize
 
 # Scientific notation bypass (ptswarm technique)
 python sqlmap.py -u "http://target.com/?id=1" --tamper=scientificnotation
+
+# Junk chars + line breaks for regex WAFs
+python sqlmap.py -u "http://target.com/?id=1" --tamper=junkchars,linebreaks
+
+# Token breaker for WAF tokenizers
+python sqlmap.py -u "http://target.com/?id=1" --tamper=tokenbreaker
+
+# OS command injection with uninitialized vars
+python sqlmap.py -u "http://target.com/?id=1" --os-shell --tamper=uninitializedvars
 
 # Combined techniques
 python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3 --chunked
