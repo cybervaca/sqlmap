@@ -44,6 +44,7 @@ WAF_BYPASS_TAMPERS = {
         "xforwardedfor",
         "randomcomments",
         "charencode",
+        "scientificnotation",  # e notation bypass (ptswarm technique)
     ],
     3: [
         # + Chunked encoding and parameter pollution

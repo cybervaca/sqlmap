@@ -17,33 +17,39 @@
    - Targets: Cloudflare (~8KB), AWS WAF (8KB), Google Cloud Armor (8KB), Azure Front Door (128KB), Sucuri (1.25MB), Fortinet (64MB)
    - Reference: https://www.blackhillsinfosec.com/bypassing-wafs-using-oversized-requests/
 
-2. **chunkextensionsmuggle.py**
+2. **scientificnotation.py**
+   - Uses scientific notation (e notation) to bypass WAF pattern matching
+   - Converts `' OR '1'='1` to `' OR 1337.e('')='1` which bypasses most WAFs
+   - Targets: Cloudflare, AWS WAF, ModSecurity CRS, Nginx WAF
+   - Reference: @ptswarm technique, GoSecure MySQL scientific notation research
+
+3. **chunkextensionsmuggle.py**
    - Exploits HTTP desync via malformed chunk extensions
    - Targets: Proxies with inconsistent chunk extension parsing
    - Reference: https://www.imperva.com/blog/smuggling-requests-with-chunked-extensions-a-new-http-desync-trick/
 
-3. **parampollutionfull.py**
+4. **parampollutionfull.py**
    - Advanced HTTP Parameter Pollution (HPP)
    - Includes variants for PHP, ASP.NET, and JSP backends
    - Targets: WAFs that only inspect first/last parameter occurrence
 
-4. **contenttypeconfusion.py**
+5. **contenttypeconfusion.py**
    - Manipulates Content-Type header to bypass WAF inspection
    - Includes EBCDIC charset confusion and null byte injection
    - Targets: WAFs with Content-Type specific rules
 
-5. **unicodenormalize.py**
+6. **unicodenormalize.py**
    - Converts SQL keywords to Unicode Fullwidth characters
    - Includes homoglyph and combining character variants
    - Targets: WAFs without Unicode normalization
    - Example: SELECT → ＳＥＬＥＣＴ
 
-6. **multipartboundary.py**
+7. **multipartboundary.py**
    - Manipulates multipart/form-data boundaries
    - Techniques: long boundaries, special chars, nested multipart
    - Targets: WAFs with strict multipart parsing
 
-7. **slowrequest.py**
+8. **slowrequest.py**
    - Marks requests for slow/delayed transmission
    - "Low and slow" attack technique for timing-based evasion
    - Targets: WAFs with behavioral/timing analysis
