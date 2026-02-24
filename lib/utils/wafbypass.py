@@ -542,11 +542,11 @@ def applyWafBypassLevel():
     """
     Initial WAF bypass setup (called during option initialization)
     
-    For 'auto' mode, this just validates the option.
-    Actual tamper application happens in applyWafBypassAfterDetection()
-    after the WAF has been detected.
+    For 'auto' mode: NO tampers are applied here. Tampers will be applied
+    dynamically in lib/request/basic.py when identYwaf detects the WAF.
     
-    For specific WAF names, tampers are applied immediately.
+    For specific WAF names (e.g., --waf-bypass=cloudflare): tampers are
+    applied immediately since we know which WAF to target.
     """
     
     level = conf.get("wafBypassLevel")
@@ -561,9 +561,9 @@ def applyWafBypassLevel():
     
     level_lower = level.lower().strip()
     
-    # For auto mode, just log that we'll detect later
+    # For auto mode, just log - tampers will be applied dynamically when WAF is detected
     if level_lower == "auto" or level_lower == "0":
-        logger.info("WAF bypass mode: auto (tampers will be applied after WAF detection)")
+        logger.info("WAF bypass mode: auto (tampers will be applied when WAF is detected)")
         return
     
     # For specific WAF, apply tampers now

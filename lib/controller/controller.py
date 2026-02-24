@@ -21,7 +21,6 @@ from lib.controller.checks import checkSqlInjection
 from lib.controller.checks import checkStability
 from lib.controller.checks import checkWaf
 from lib.controller.checks import heuristicCheckSqlInjection
-from lib.utils.wafbypass import applyWafBypassAfterDetection
 from lib.core.agent import agent
 from lib.core.common import dataToStdout
 from lib.core.common import extractRegexResult
@@ -449,9 +448,8 @@ def start():
             checkWaf()
 
             # Author: CyberVaca , Luis Vacas de Santos
-            # Apply WAF-specific tampers AFTER detection
-            if conf.get("wafBypassLevel"):
-                applyWafBypassAfterDetection()
+            # Note: WAF-specific tampers are now applied dynamically in lib/request/basic.py
+            # when identYwaf detects the specific WAF during HTTP requests
 
             if conf.nullConnection:
                 checkNullConnection()

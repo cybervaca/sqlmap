@@ -58,6 +58,80 @@ from thirdparty import six
 from thirdparty.chardet import detect
 from thirdparty.identywaf import identYwaf
 from thirdparty.odict import OrderedDict
+
+# Author: CyberVaca - Flag to track if dynamic WAF bypass has been applied
+_wafBypassApplied = False
+
+def _applyDynamicWafBypass(waf):
+    """
+    Dynamically applies WAF-specific tampers when a WAF is detected during testing.
+    This is called from parseResponse() when identYwaf identifies a WAF.
+    
+    Author: CyberVaca, Luis Vacas de Santos
+    """
+    global _wafBypassApplied
+    
+    # Only apply once and only if --waf-bypass=auto is set
+    if _wafBypassApplied:
+        return
+    
+    wafBypassLevel = conf.get("wafBypassLevel")
+    if not wafBypassLevel:
+        return
+    
+    # Convert to string if needed
+    if isinstance(wafBypassLevel, int):
+        wafBypassLevel = str(wafBypassLevel)
+    
+    # Only apply for 'auto' mode
+    if wafBypassLevel.lower().strip() not in ("auto", "0"):
+        return
+    
+    try:
+        from lib.utils.wafbypass import getWafTampers, getWafInfo, normalizeWafName
+        from lib.core.option import _setTamperingFunctions
+        
+        normalized = normalizeWafName(waf)
+        tampers = getWafTampers(waf)
+        
+        if not tampers:
+            return
+        
+        # Get existing tampers
+        existing = conf.get("tamper") or ""
+        if existing:
+            existing_list = [t.strip() for t in existing.split(',') if t.strip()]
+        else:
+            existing_list = []
+        
+        # Check if we already have these tampers
+        if all(t in existing_list for t in tampers):
+            _wafBypassApplied = True
+            return
+        
+        # Remove generic tampers if they were applied before
+        generic_tampers = ["space2comment", "randomcase", "between"]
+        new_existing = [t for t in existing_list if t not in generic_tampers]
+        
+        # Merge: WAF-specific tampers first
+        all_tampers = tampers + [t for t in new_existing if t not in tampers]
+        conf.tamper = ','.join(all_tampers)
+        
+        # Reload tamper functions
+        _setTamperingFunctions()
+        
+        # Log the change
+        info = getWafInfo(waf)
+        infoMsg = "WAF bypass: switching to \x1b[1;92m%s\x1b[0m-specific tampers: %s" % (normalized, ', '.join(tampers))
+        logger.info(infoMsg)
+        
+        if info.get("notes"):
+            logger.info("Technique: %s" % info["notes"][:60])
+        
+        _wafBypassApplied = True
+        
+    except Exception as ex:
+        logger.debug("Could not apply dynamic WAF bypass: %s" % getSafeExString(ex))
 from thirdparty.six import unichr as _unichr
 from thirdparty.six.moves import http_client as _http_client
 
@@ -410,6 +484,9 @@ def processResponse(page, responseHeaders, code=None, status=None):
                             wafName = identYwaf.format_name(waf)
                             errMsg = "WAF/IPS identified as '\x1b[1;91m%s\x1b[0m'" % wafName
                             singleTimeLogMessage(errMsg, logging.CRITICAL)
+                            
+                            # Author: CyberVaca - Dynamic WAF bypass: apply tampers when WAF detected
+                            _applyDynamicWafBypass(waf)
             except Exception as ex:
                 singleTimeWarnMessage("internal error occurred in WAF/IPS detection ('%s')" % getSafeExString(ex))
 
