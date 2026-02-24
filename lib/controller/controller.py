@@ -21,6 +21,7 @@ from lib.controller.checks import checkSqlInjection
 from lib.controller.checks import checkStability
 from lib.controller.checks import checkWaf
 from lib.controller.checks import heuristicCheckSqlInjection
+from lib.utils.wafbypass import applyWafBypassAfterDetection
 from lib.core.agent import agent
 from lib.core.common import dataToStdout
 from lib.core.common import extractRegexResult
@@ -446,6 +447,11 @@ def start():
                         kb.randomPool[name] = options
 
             checkWaf()
+
+            # Author: CyberVaca , Luis Vacas de Santos
+            # Apply WAF-specific tampers AFTER detection
+            if conf.get("wafBypassLevel"):
+                applyWafBypassAfterDetection()
 
             if conf.nullConnection:
                 checkNullConnection()
