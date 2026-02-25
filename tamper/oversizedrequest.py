@@ -12,7 +12,10 @@ See the file 'LICENSE' for copying permission
 import random
 import string
 
+from lib.core.compat import xrange
+from lib.core.enums import HINT
 from lib.core.enums import PRIORITY
+from lib.core.settings import DEFAULT_GET_POST_DELIMITER
 
 __priority__ = PRIORITY.LOWEST
 
@@ -39,25 +42,27 @@ def tamper(payload, **kwargs):
         * Many WAFs have a maximum request body size they will inspect
         * Requests exceeding this limit may bypass inspection entirely
         * Default padding is 8200 bytes (covers most common WAF limits)
-        * Use --tamper-data to customize: oversizedrequest.size=16384
+        * Junk is added at the START of the HTTP body using HINT.PREPEND
 
     Reference: 
         * https://www.blackhillsinfosec.com/bypassing-wafs-using-oversized-requests/
 
-    >>> tamper('1 AND 1=1')  # doctest: +ELLIPSIS
-    'junk=...&1 AND 1=1'
+    >>> random.seed(0); hints={}; tamper('1 AND 1=1', hints=hints); len(hints[HINT.PREPEND]) > 8000
+    True
     """
 
-    if payload:
-        # Default size covers Cloudflare, AWS WAF, Google Cloud Armor
-        # Can be customized via --tamper-data="oversizedrequest.size=16384"
-        padding_size = 8200
-        
-        # Generate random junk data to avoid pattern detection
-        junk_chars = string.ascii_letters + string.digits
-        junk_data = ''.join(random.choice(junk_chars) for _ in range(padding_size))
-        
-        # Prepend junk parameter before the actual payload
-        return "junk=%s&%s" % (junk_data, payload)
+    hints = kwargs.get("hints", {})
+    delimiter = kwargs.get("delimiter", DEFAULT_GET_POST_DELIMITER)
+
+    # Default size covers Cloudflare, AWS WAF, Google Cloud Armor
+    padding_size = 8200
     
+    # Generate random junk data to avoid pattern detection
+    junk_chars = string.ascii_letters + string.digits
+    junk_data = ''.join(random.choice(junk_chars) for _ in xrange(padding_size))
+    
+    # Use HINT.PREPEND to add junk at the START of the HTTP body
+    # This ensures the WAF sees junk first, potentially exceeding its inspection limit
+    hints[HINT.PREPEND] = "junk=%s" % junk_data
+
     return payload

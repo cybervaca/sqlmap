@@ -6,6 +6,23 @@
 
 ---
 
+## [2.2.0] - 2026-02-24 - Oversized Request Fix
+
+### Bug Fix
+
+**oversizedrequest.py** - Fixed junk data placement
+
+**Problem:**
+- Junk was being prepended to the payload parameter, not the HTTP body
+- WAF could still inspect the actual payload
+
+**Solution:**
+- Now uses `HINT.PREPEND` mechanism to add junk at the START of HTTP body
+- WAF sees 8KB of junk first, potentially exceeding inspection limit
+- Payload remains in its original position, unmodified
+
+---
+
 ## [2.1.0] - 2026-02-24 - Cloudflare 403 Bypass
 
 ### New Tamper Script
