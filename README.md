@@ -90,7 +90,7 @@ Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 
 | Script | Description |
 |--------|-------------|
-| `oversizedrequest` | Bypass WAF body size limits (8KB-64MB) |
+| `oversizedrequest` | Bypass WAF body size limits (8KB-64MB). Use `--tamper-data=oversizedrequest.size=20M` or `SQLMAP_OVERSIZEDREQUEST_SIZE` for custom size |
 | `scientificnotation` | E notation bypass (`' OR 1337.e('')='`) - @ptswarm technique |
 | `chunkextensionsmuggle` | HTTP desync via malformed chunk extensions |
 | `parampollutionfull` | Advanced HTTP Parameter Pollution |
@@ -104,12 +104,18 @@ Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 | `tabsandlinefeeds` | Tabs (%09) instead of spaces for regex bypass |
 | `methodoverride` | HTTP method override (PUT, PATCH, DELETE) bypass |
 | `doubleencode` | Double URL encoding (%2520) to bypass normalization |
+| `oraclechr` | Oracle: string literals to CHR() concatenation (Ghauri) |
+| `oraclebetween` | Oracle: uses NOT BETWEEN instead of > (Ghauri) |
+| `oraclectxsys` | Oracle: CTXSYS.DRITHSX.SN for boolean-based (Ghauri) |
 
 ### Usage Examples
 
 ```bash
 # Bypass Cloudflare/AWS (8KB body limit)
 python sqlmap.py -r request.req --tamper=oversizedrequest
+
+# Custom oversize (e.g. 20M for Fortinet, 128K for Azure)
+python sqlmap.py -r request.req --tamper=oversizedrequest --tamper-data=oversizedrequest.size=20M
 
 # HTTP smuggling with chunked encoding
 python sqlmap.py -r request.req --chunked --tamper=chunkextensionsmuggle
@@ -133,6 +139,9 @@ python sqlmap.py -r request.req --waf-bypass=auto
 python sqlmap.py -r request.req --waf-bypass=cloudflare
 python sqlmap.py -r request.req --waf-bypass=modsecurity
 python sqlmap.py -r request.req --waf-bypass=f5
+
+# Oracle + F5 WAF (Ghauri techniques)
+python sqlmap.py -r request.req --dbms=oracle --tamper=oraclebetween,oraclechr,between --dbs
 
 # Combined with chunked encoding
 python sqlmap.py -r request.req --waf-bypass=auto --chunked

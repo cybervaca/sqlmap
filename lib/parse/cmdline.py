@@ -305,7 +305,6 @@ def cmdLineParser(argv=None):
 
         # Author: CyberVaca , Luis Vacas de Santos
         # Twitter: https://twitter.com/CyberVaca_
-        # Based on the Alamot's original code
         request.add_argument("--waf-bypass", dest="wafBypassLevel",
             help="WAF bypass mode: 'auto' (detect WAF), or WAF name (cloudflare, modsecurity, aws, etc.)")
 
@@ -380,6 +379,9 @@ def cmdLineParser(argv=None):
 
         injection.add_argument("--tamper", dest="tamper",
             help="Use given script(s) for tampering injection data")
+
+        injection.add_argument("--tamper-data", dest="tamperData",
+            help="Tamper-specific parameters (e.g. oversizedrequest.size=20M)")
 
         # Detection options
         detection = parser.add_argument_group("Detection", "These options can be used to customize the detection phase")

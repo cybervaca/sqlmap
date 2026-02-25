@@ -913,6 +913,14 @@ def checkFalsePositives(injection):
 
     retVal = True
 
+    # Author: CyberVaca, Luis Vacas de Santos
+    # Twitter: https://twitter.com/CyberVaca_
+    # Skip FP check when WAF detected + time-based: WAF can block verification
+    # requests inconsistently, causing false negative (valid injection marked FP)
+    if PAYLOAD.TECHNIQUE.TIME in injection.data and getattr(kb, 'identifiedWafs', None):
+        if kb.identifiedWafs:
+            return True
+
     if all(_ in (PAYLOAD.TECHNIQUE.BOOLEAN, PAYLOAD.TECHNIQUE.TIME, PAYLOAD.TECHNIQUE.STACKED) for _ in injection.data) or (len(injection.data) == 1 and PAYLOAD.TECHNIQUE.UNION in injection.data and "Generic" in injection.data[PAYLOAD.TECHNIQUE.UNION].title):
         pushValue(kb.injection)
 

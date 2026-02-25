@@ -751,7 +751,6 @@ def _setWafBypassLevel():
     
     # Author: CyberVaca , Luis Vacas de Santos
     # Twitter: https://twitter.com/CyberVaca_
-    # Based on the Alamot's original code
     
     Accepts:
         - "auto": Auto-detect WAF and apply specific tampers
@@ -1820,6 +1819,22 @@ def _cleanupOptions():
         conf.skip = re.split(PARAMETER_SPLITTING_REGEX, conf.skip)
     else:
         conf.skip = []
+
+    if conf.tamperData:
+        _tamper_data = {}
+        for part in re.split(PARAMETER_SPLITTING_REGEX, conf.tamperData.strip()):
+            part = part.strip()
+            if '.' in part and '=' in part:
+                tamper_name, rest = part.split('.', 1)
+                tamper_name = tamper_name.strip()
+                if '=' in rest:
+                    param, value = rest.split('=', 1)
+                    param, value = param.strip(), value.strip()
+                    if tamper_name and param:
+                        _tamper_data.setdefault(tamper_name, {})[param] = value
+        conf.tamperData = _tamper_data
+    else:
+        conf.tamperData = {}
 
     if conf.cookie:
         conf.cookie = re.sub(r"[\r\n]", "", conf.cookie)

@@ -5591,7 +5591,6 @@ def chunkSplitPostData(data, aggressive=False, use_extensions=True):
     
     # Author: CyberVaca , Luis Vacas de Santos
     # Twitter: https://twitter.com/CyberVaca_
-    # Based on the Alamot's original code
     
     Enhanced with WAF bypass techniques:
         * Smaller chunk sizes (1-3 bytes) in aggressive mode
@@ -5667,7 +5666,6 @@ def chunkSplitPostDataAggressive(data):
     
     # Author: CyberVaca , Luis Vacas de Santos
     # Twitter: https://twitter.com/CyberVaca_
-    # Based on the Alamot's original code
     
     This version uses 1-2 byte chunks to split SQL keywords mid-character,
     making pattern matching nearly impossible for WAFs.
@@ -5681,7 +5679,6 @@ def chunkSplitPostDataDesync(data):
     
     # Author: CyberVaca , Luis Vacas de Santos
     # Twitter: https://twitter.com/CyberVaca_
-    # Based on the Alamot's original code
     
     Uses malformed chunk extensions that may cause parsing differences
     between front-end proxies and back-end servers.

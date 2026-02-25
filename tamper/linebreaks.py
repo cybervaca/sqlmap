@@ -2,7 +2,6 @@
 
 # Author: CyberVaca , Luis Vacas de Santos
 # Twitter: https://twitter.com/CyberVaca_
-# Based on the Alamot's original code
 
 """
 Copyright (c) 2006-2026 sqlmap developers (https://sqlmap.org)

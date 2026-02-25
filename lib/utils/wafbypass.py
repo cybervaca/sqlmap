@@ -2,7 +2,6 @@
 
 # Author: CyberVaca , Luis Vacas de Santos
 # Twitter: https://twitter.com/CyberVaca_
-# Based on the Alamot's original code
 
 """
 Copyright (c) 2006-2026 sqlmap developers (https://sqlmap.org)
@@ -148,8 +147,9 @@ WAF_TAMPERS = {
         # --tamper=between,randomcase,space2comment
         # --tamper=charencode,randomcase,space2comment
         # --tamper=space2comment,between,randomcase,equaltolike
-        "tampers": ["between", "randomcase", "space2comment", "equaltolike"],
-        "notes": "between, equaltolike effective. Also: charencode",
+        # For Oracle: --tamper=oraclebetween,oraclechr,oraclectxsys,between
+        "tampers": ["between", "randomcase", "space2comment", "oraclebetween"],
+        "notes": "between, equaltolike effective. oraclebetween for Oracle+F5.",
         "detection": ["f5", "big-ip", "bigip", "asm", "ts="],
     },
     

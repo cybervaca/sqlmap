@@ -387,6 +387,16 @@ Formats:
         <suffix>[GENERIC_SQL_COMMENT]</suffix>
     </boundary>
 
+    <!-- Ghauri-style: break out of string and concatenate (Oracle time-based bypass) -->
+    <boundary>
+        <level>2</level>
+        <clause>1,9</clause>
+        <where>1</where>
+        <ptype>2</ptype>
+        <prefix>'||</prefix>
+        <suffix>||'</suffix>
+    </boundary>
+
     <boundary>
         <level>5</level>
         <clause>9</clause>

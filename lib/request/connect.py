@@ -1088,7 +1088,8 @@ class Connect(object):
                     hints = {}
 
                     try:
-                        payload = function(payload=payload, headers=auxHeaders, delimiter=delimiter, hints=hints)
+                        tamperData = getattr(conf, 'tamperData', None) or {}
+                        payload = function(payload=payload, headers=auxHeaders, delimiter=delimiter, hints=hints, tamperData=tamperData)
                     except Exception as ex:
                         errMsg = "error occurred while running tamper "
                         errMsg += "function '%s' ('%s')" % (function.__name__, getSafeExString(ex))
