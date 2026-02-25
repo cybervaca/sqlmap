@@ -50,8 +50,9 @@ WAF_TAMPERS = {
     "cloudflare": {
         # --tamper=space2comment,between,randomcase,charencode
         # --tamper=space2comment,randomcase,apostrophemask
-        "tampers": ["space2comment", "between", "randomcase", "charencode"],
-        "notes": "8KB body limit. Effective: space2comment, between, randomcase, charencode",
+        # --tamper=cloudflarebypas (for time-based blind SQLi 403 bypass)
+        "tampers": ["cloudflarebypas", "space2comment", "between", "randomcase"],
+        "notes": "8KB body limit. cloudflarebypas for time-based 403 bypass.",
         "detection": ["cf-ray", "__cfduid", "cloudflare"],
     },
     

