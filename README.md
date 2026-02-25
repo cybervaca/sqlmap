@@ -104,6 +104,8 @@ Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 | `tabsandlinefeeds` | Tabs (%09) instead of spaces for regex bypass |
 | `methodoverride` | HTTP method override (PUT, PATCH, DELETE) bypass |
 | `doubleencode` | Double URL encoding (%2520) to bypass normalization |
+| `oaboracle` | Oracle keyword obfuscation (SYS./**/ALL_TABLES) |
+| `oaboracleconcat` | Oracle string to CHR() concatenation |
 
 ### Usage Examples
 
@@ -133,6 +135,9 @@ python sqlmap.py -r request.req --waf-bypass=auto
 python sqlmap.py -r request.req --waf-bypass=cloudflare
 python sqlmap.py -r request.req --waf-bypass=modsecurity
 python sqlmap.py -r request.req --waf-bypass=f5
+
+# Oracle with F5 WAF bypass
+python sqlmap.py -r request.req --dbms=oracle --tamper=oaboracle,between,randomcase --dbs
 
 # Combined with chunked encoding
 python sqlmap.py -r request.req --waf-bypass=auto --chunked

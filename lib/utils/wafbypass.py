@@ -148,8 +148,9 @@ WAF_TAMPERS = {
         # --tamper=between,randomcase,space2comment
         # --tamper=charencode,randomcase,space2comment
         # --tamper=space2comment,between,randomcase,equaltolike
-        "tampers": ["between", "randomcase", "space2comment", "equaltolike"],
-        "notes": "between, equaltolike effective. Also: charencode",
+        # For Oracle: --tamper=oaboracle,between,randomcase
+        "tampers": ["between", "randomcase", "space2comment", "oaboracle"],
+        "notes": "between, equaltolike effective. oaboracle for Oracle DBs.",
         "detection": ["f5", "big-ip", "bigip", "asm", "ts="],
     },
     
