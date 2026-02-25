@@ -14,11 +14,11 @@ You can visit the [collection of screenshots](https://github.com/sqlmapproject/s
 Installation
 ----
 
-You can download the latest tarball by clicking [here](https://github.com/sqlmapproject/sqlmap/tarball/master) or latest zipball by clicking [here](https://github.com/sqlmapproject/sqlmap/zipball/master).
+You can download the latest tarball by clicking [here](https://github.com/cybervaca/sqlmap/tarball/master) or latest zipball by clicking [here](https://github.com/cybervaca/sqlmap/zipball/master).
 
-Preferably, you can download sqlmap by cloning the [Git](https://github.com/sqlmapproject/sqlmap) repository:
+Preferably, you can download sqlmap by cloning the [Git](https://github.com/cybervaca/sqlmap) repository:
 
-    git clone https://github.com/cybervaca/sqlmap.git 
+    git clone --depth 1 https://github.com/cybervaca/sqlmap.git sqlmap-dev
 
 sqlmap works out of the box with [Python](https://www.python.org/download/) version **2.7** and **3.x** on any platform.
 
@@ -144,7 +144,7 @@ Links
 ----
 
 * Homepage: https://sqlmap.org
-* Download: [.tar.gz](https://github.com/sqlmapproject/sqlmap/tarball/master) or [.zip](https://github.com/sqlmapproject/sqlmap/zipball/master)
+* Download: [.tar.gz](https://github.com/cybervaca/sqlmap/tarball/master) or [.zip](https://github.com/cybervaca/sqlmap/zipball/master)
 * Commits RSS feed: https://github.com/sqlmapproject/sqlmap/commits/master.atom
 * Issue tracker: https://github.com/sqlmapproject/sqlmap/issues
 * User's manual: https://github.com/sqlmapproject/sqlmap/wiki
