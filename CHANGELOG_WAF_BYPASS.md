@@ -6,39 +6,6 @@
 
 ---
 
-## [2.3.0] - 2026-02-25 - Oracle WAF Bypass Tampers
-
-### New Tamper Scripts
-
-**oaboracle.py** - Oracle keyword obfuscation for WAF bypass
-
-**Techniques:**
-- Breaks Oracle system objects: `SYS.ALL_TABLES` → `SYS./**/ALL_TABLES`
-- Breaks DUAL: `FROM DUAL` → `FROM/**/DUAL`
-- Breaks ROWNUM: `ROWNUM` → `ROW/**/NUM`
-- Breaks functions: `ASCII(` → `ASC/**/II(`
-- Breaks SELECT/COUNT/DISTINCT with inline comments
-
-**oaboracleconcat.py** - String to CHR() concatenation
-
-**Techniques:**
-- Converts string literals to CHR() concatenation
-- `'test'` → `CHR(116)||CHR(101)||CHR(115)||CHR(116)`
-- Very effective against signature-based WAFs
-
-**Tested against:**
-- F5 BIG-IP ASM
-- Imperva SecureSphere
-- ModSecurity with Oracle rules
-
-**Usage:**
-```bash
-sqlmap -r request.req --dbms=oracle --tamper=oaboracle,between,randomcase --dbs
-sqlmap -r request.req --dbms=oracle --tamper=oaboracle,oaboracleconcat,between --dbs
-```
-
----
-
 ## [2.2.0] - 2026-02-24 - Oversized Request Fix
 
 ### Bug Fix
