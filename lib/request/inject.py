@@ -479,10 +479,43 @@ def getValue(expression, blind=True, union=True, error=True, time=True, fromUser
                 else:
                     setTechnique(PAYLOAD.TECHNIQUE.STACKED)
 
+                initTechnique(getTechnique())
+
                 if expected == EXPECTED.BOOL:
                     value = _goBooleanProxy(booleanExpression)
                 else:
                     value = _goInferenceProxy(query, fromUser, batch, unpack, charsetType, firstChar, lastChar, dump)
+
+                # Oracle: if Ghauri failed, try fallback chain (DBMS_LOCK -> USER_LOCK -> heavy)
+                chain = getattr(kb.injection, "oracleTimeFallbackChain", None)
+                if chain is None:
+                    fallback = getattr(kb.injection, "oracleTimeFallback", None)
+                    chain = [fallback] if fallback else None
+                idx = getattr(kb.injection, "oracleTimeFallbackIndex", -1)
+                if (value is None and Backend.getIdentifiedDbms() == DBMS.ORACLE and chain and
+                        not getattr(kb.injection, "oracleTimeUsedFallback", False)):
+                    while value is None and idx + 1 < len(chain):
+                        idx += 1
+                        kb.injection.oracleTimeFallbackIndex = idx
+                        fb = chain[idx]
+                        kb.injection.data[PAYLOAD.TECHNIQUE.TIME] = fb.data
+                        kb.injection.prefix = fb.prefix
+                        kb.injection.suffix = fb.suffix
+                        kb.injection.clause = fb.clause
+                        initTechnique(PAYLOAD.TECHNIQUE.TIME)
+                        _name = (getattr(fb.data, "title", None) or "").lower()
+                        if "dbms_lock" in _name:
+                            logger.info("Ghauri-style failed, trying DBMS_LOCK.SLEEP")
+                        elif "user_lock" in _name:
+                            logger.info("Ghauri-style failed, trying USER_LOCK.SLEEP")
+                        else:
+                            logger.info("Ghauri-style failed, falling back to sqlmap Oracle time-based payload")
+                        if expected == EXPECTED.BOOL:
+                            value = _goBooleanProxy(booleanExpression)
+                        else:
+                            value = _goInferenceProxy(query, fromUser, batch, unpack, charsetType, firstChar, lastChar, dump)
+                    if value is None:
+                        kb.injection.oracleTimeUsedFallback = True
         else:
             errMsg = "none of the injection types identified can be "
             errMsg += "leveraged to retrieve queries output"

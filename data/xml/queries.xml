@@ -246,11 +246,8 @@
         <inference query="ASCII(SUBSTRC((%s),%d,1))>%d"/>
         <banner query="SELECT banner FROM v$version WHERE ROWNUM=1"/>
         <current_user query="SELECT USER FROM DUAL"/>
-        <!--
-        NOTE: current physical DB but not usable for enumeration
-        <current_db query="SELECT SYS.DATABASE_NAME FROM DUAL"/>
-        -->
-        <current_db query="SELECT USER FROM DUAL"/>
+        <!-- GLOBAL_NAME matches Ghauri output; USER as fallback for enumeration -->
+        <current_db query="SELECT GLOBAL_NAME FROM GLOBAL_NAME" query2="SELECT USER FROM DUAL"/>
         <!--
              NOTE: in Oracle to check if the session user is DBA you can use:
              SELECT USERENV('ISDBA') FROM DUAL

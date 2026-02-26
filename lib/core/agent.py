@@ -303,7 +303,7 @@ class Agent(object):
             if "SELECT '[RANDSTR]'" in query:  # escaping of pre-WHERE prefixes
                 query = query.replace("'[RANDSTR]'", unescaper.escape(randomStr(), quote=False))
 
-            if not (expression and expression[0] == ';') and not (query and query[-1] in ('(', ')') and expression and expression[0] in ('(', ')')) and not (query and query[-1] == '('):
+            if not (expression and expression[0] == ';') and not (query and query[-1] in ('(', ')') and expression and expression[0] in ('(', ')')) and not (query and query[-1] == '(') and not (query.rstrip().endswith("||")):
                 query += " "
 
         query = "%s%s" % ((query or "").replace('\\', BOUNDARY_BACKSLASH_MARKER), expression)

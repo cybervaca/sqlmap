@@ -65,6 +65,7 @@ from lib.core.data import conf
 from lib.core.data import kb
 from lib.core.data import logger
 from lib.core.data import paths
+from lib.core.datatype import AttribDict
 from lib.core.datatype import OrderedSet
 from lib.core.decorators import cachedmethod
 from lib.core.defaults import defaults
@@ -3630,6 +3631,51 @@ def initTechnique(technique=None):
     try:
         data = getTechniqueData(technique)
         resetCounter(technique)
+
+        # Oracle time-based: prefer Ghauri-style first; fallback chain DBMS_PIPE > DBMS_LOCK > USER_LOCK > heavy
+        if technique == PAYLOAD.TECHNIQUE.TIME and Backend.getIdentifiedDbms() == DBMS.ORACLE and data:
+            isGhauri = "ghauri" in (getattr(data, "title", None) or "").lower()
+            ghauriTests = {}
+            if not isGhauri:
+                for test in getSortedInjectionTests():
+                    if not (hasattr(test, "title") and test.stype == PAYLOAD.TECHNIQUE.TIME and "ghauri" in (test.title or "").lower()):
+                        continue
+                    t = (test.title or "").lower()
+                    if "dbms_pipe" in t:
+                        ghauriTests["dbms_pipe"] = test
+                    elif "dbms_lock" in t:
+                        ghauriTests["dbms_lock"] = test
+                    elif "user_lock" in t:
+                        ghauriTests["user_lock"] = test
+            if ghauriTests and not getattr(kb.injection, "oracleTimeUsedFallback", False):
+                heavy = AttribDict({
+                    "data": data,
+                    "prefix": getattr(kb.injection, "prefix", None),
+                    "suffix": getattr(kb.injection, "suffix", None),
+                    "clause": getattr(kb.injection, "clause", None)
+                })
+                kb.injection.oracleTimeFallbackChain = [heavy]
+                for key in ("user_lock", "dbms_lock"):
+                    if key in ghauriTests:
+                        t = ghauriTests[key]
+                        for attr in ("templatePayload", "matchRatio", "comment", "payload", "trueCode", "falseCode"):
+                            setattr(t, attr, getattr(data, attr, None))
+                        kb.injection.oracleTimeFallbackChain.insert(0, AttribDict({
+                            "data": t, "prefix": "'||", "suffix": "||'",
+                            "clause": getattr(t, "clause", None) or getattr(kb.injection, "clause", None)
+                        }))
+                ghauriTest = ghauriTests.get("dbms_pipe")
+                if ghauriTest is not None:
+                    for attr in ("templatePayload", "matchRatio", "comment", "payload", "trueCode", "falseCode"):
+                        setattr(ghauriTest, attr, getattr(data, attr, None))
+                    kb.injection.data[technique] = ghauriTest
+                    kb.injection.prefix = "'||"
+                    kb.injection.suffix = "||'"
+                    if hasattr(ghauriTest, "clause") and ghauriTest.clause:
+                        kb.injection.clause = ghauriTest.clause
+                    data = ghauriTest
+                    kb.injection.oracleTimeFallbackIndex = 0
+                    logger.info("using Ghauri-style (DBMS_PIPE) payload for Oracle extraction (fallback chain: DBMS_LOCK, USER_LOCK, sqlmap)")
 
         if data:
             kb.pageTemplate, kb.errorIsNone = getPageTemplate(data.templatePayload, kb.injection.place)

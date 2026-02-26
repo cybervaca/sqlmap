@@ -75,10 +75,14 @@ class Databases(object):
         infoMsg = "fetching current database"
         logger.info(infoMsg)
 
-        query = queries[Backend.getIdentifiedDbms()].current_db.query
+        currentDbNode = queries[Backend.getIdentifiedDbms()].current_db
+        query = currentDbNode.query
 
         if not kb.data.currentDb:
             kb.data.currentDb = unArrayizeValue(inject.getValue(query, safeCharEncode=False))
+
+        if not kb.data.currentDb and getattr(currentDbNode, "query2", None):
+            kb.data.currentDb = unArrayizeValue(inject.getValue(currentDbNode.query2, safeCharEncode=False))
 
         if not kb.data.currentDb and Backend.isDbms(DBMS.VERTICA):
             kb.data.currentDb = VERTICA_DEFAULT_SCHEMA

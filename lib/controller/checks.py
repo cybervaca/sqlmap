@@ -467,6 +467,8 @@ def checkSqlInjection(place, parameter, value):
                     if fstPayload:
                         boundPayload = agent.prefixQuery(fstPayload, prefix, where, clause)
                         boundPayload = agent.suffixQuery(boundPayload, comment, suffix, where)
+                        # Do NOT prepend origValue here: agent.payload() already does newValue=origValue+newValue
+                        # when where=ORIGINAL and value is None. Prepending would double it (aaaaa + aaaaa'||...).
                         reqPayload = agent.payload(place, parameter, newValue=boundPayload, where=where)
 
                         if reqPayload:
@@ -915,10 +917,14 @@ def checkFalsePositives(injection):
 
     # Author: CyberVaca, Luis Vacas de Santos
     # Twitter: https://twitter.com/CyberVaca_
-    # Skip FP check when WAF detected + time-based: WAF can block verification
-    # requests inconsistently, causing false negative (valid injection marked FP)
-    if PAYLOAD.TECHNIQUE.TIME in injection.data and getattr(kb, 'identifiedWafs', None):
-        if kb.identifiedWafs:
+    # Skip FP check when WAF detected (specific or heuristic) + time-based: WAF can block
+    # verification requests inconsistently, causing false negative (valid injection marked FP)
+    if PAYLOAD.TECHNIQUE.TIME in injection.data:
+        # identYwaf identified a specific WAF
+        if getattr(kb, 'identifiedWafs', None) and kb.identifiedWafs:
+            return True
+        # Heuristic check detected "some kind of WAF/IPS"
+        if hashDBRetrieve(HASHDB_KEYS.CHECK_WAF_RESULT, True):
             return True
 
     if all(_ in (PAYLOAD.TECHNIQUE.BOOLEAN, PAYLOAD.TECHNIQUE.TIME, PAYLOAD.TECHNIQUE.STACKED) for _ in injection.data) or (len(injection.data) == 1 and PAYLOAD.TECHNIQUE.UNION in injection.data and "Generic" in injection.data[PAYLOAD.TECHNIQUE.UNION].title):

@@ -19,11 +19,11 @@ from lib.core.enums import DBMS_DIRECTORY_NAME
 from lib.core.enums import OS
 from thirdparty import six
 
-# sqlmap version (<major>.<minor>.<month>.<monthly commit>)
-VERSION = "1.10.2.17"
-TYPE = "dev" if VERSION.count('.') > 2 and VERSION.split('.')[-1] != '0' else "stable"
+# CyberVaca mod version (based on sqlmap 1.10.2.17)
+VERSION = "1.0.0"
+TYPE = "dev"
 TYPE_COLORS = {"dev": 33, "stable": 90, "pip": 34}
-VERSION_STRING = "sqlmap/CyberVaca mod. %s#%s" % ('.'.join(VERSION.split('.')[:-1]) if VERSION.count('.') > 2 and VERSION.split('.')[-1] == '0' else VERSION, TYPE)
+VERSION_STRING = "sqlmap/CyberVaca mod. %s#%s" % (VERSION, TYPE)
 DESCRIPTION = "automatic SQL injection and database takeover tool"
 SITE = "https://sqlmap.org"
 DEFAULT_USER_AGENT = "%s (%s)" % (VERSION_STRING, SITE)
@@ -503,7 +503,8 @@ MIN_ERROR_CHUNK_LENGTH = 8
 MAX_ERROR_CHUNK_LENGTH = 1024
 
 # Do not escape the injected statement if it contains any of the following SQL keywords
-EXCLUDE_UNESCAPE = ("WAITFOR DELAY '", " INTO DUMPFILE ", " INTO OUTFILE ", "CREATE ", "BULK ", "EXEC ", "RECONFIGURE ", "DECLARE ", "'%s'" % CHAR_INFERENCE_MARK)
+# DBMS_PIPE.RECEIVE_MESSAGE: keep pipe name as quoted string (Ghauri format), CHR() may trigger WAF
+EXCLUDE_UNESCAPE = ("WAITFOR DELAY '", " INTO DUMPFILE ", " INTO OUTFILE ", "CREATE ", "BULK ", "EXEC ", "RECONFIGURE ", "DECLARE ", "DBMS_PIPE.RECEIVE_MESSAGE", "'%s'" % CHAR_INFERENCE_MARK)
 
 # Mark used for replacement of reflected values
 REFLECTED_VALUE_MARKER = "__REFLECTED_VALUE__"

