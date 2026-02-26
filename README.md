@@ -2,6 +2,8 @@
 
 [![.github/workflows/tests.yml](https://github.com/sqlmapproject/sqlmap/actions/workflows/tests.yml/badge.svg)](https://github.com/sqlmapproject/sqlmap/actions/workflows/tests.yml) [![Python 2.7|3.x](https://img.shields.io/badge/python-2.7|3.x-yellow.svg)](https://www.python.org/) [![License](https://img.shields.io/badge/license-GPLv2-red.svg)](https://raw.githubusercontent.com/sqlmapproject/sqlmap/master/LICENSE) [![x](https://img.shields.io/badge/x-@sqlmap-blue.svg)](https://x.com/sqlmap)
 
+**CyberVaca mod 1.0.0#dev** - Fork with WAF bypass enhancements and Ghauri integration.
+
 sqlmap is an open source penetration testing tool that automates the process of detecting and exploiting SQL injection flaws and taking over of database servers. It comes with a powerful detection engine, many niche features for the ultimate penetration tester, and a broad range of switches including database fingerprinting, over data fetching from the database, accessing the underlying file system, and executing commands on the operating system via out-of-band connections.
 
 Screenshots
@@ -148,6 +150,26 @@ python sqlmap.py -r request.req --waf-bypass=auto --chunked
 ```
 
 See [CHANGELOG_WAF_BYPASS.md](CHANGELOG_WAF_BYPASS.md) for full details.
+
+Ghauri Integration
+----
+
+Payloads and behavior aligned with [Ghauri](https://github.com/r0oth3x49/ghauri) for Oracle time-based blind injection (F5 WAF bypass):
+
+* **Oracle payloads**: DBMS_PIPE.RECEIVE_MESSAGE, DBMS_LOCK.SLEEP, USER_LOCK.SLEEP - string context with `'||payload||'`
+* **Original value preserved**: With custom injection marker (`login=aaaaa*`), payload becomes `aaaaa'||DBMS_PIPE.RECEIVE_MESSAGE(...)||'` like Ghauri
+* **Priority**: When Oracle + time-based is detected via heavy query, extraction automatically uses Ghauri-style payload first; fallback to sqlmap heavy query if needed
+* **MySQL/PostgreSQL/MSSQL**: Ghauri-style payloads added for time-based and stacked queries
+
+PayloadsAllTheThings Integration
+----
+
+Additional payloads from [PayloadsAllTheThings SQL Injection](https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/SQL%20Injection):
+
+* **Polyglot**: Time-based multi-context bypass (`SLEEP(N)/*' or SLEEP(N) or '" or SLEEP(N) or "*/`)
+* **Oracle error-based**: XDBURITYPE.getblob, ordsys.ord_dicom.getmappingxpath
+* **SQLite boolean blind**: json('') as oracle for malformed JSON error when false
+* **WAF bypass boundaries**: No-space (`/**/` instead of spaces) at level 5
 
 Links
 ----

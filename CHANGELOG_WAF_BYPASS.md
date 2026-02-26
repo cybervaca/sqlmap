@@ -6,11 +6,40 @@
 
 ---
 
-## [2.6.0] - 2026-02-24 - CyberVaca mod 1.10.2.17#dev
+## [1.0.0] - 2026-02-26 - CyberVaca mod
+
+Primera versión del mod con numeración propia. Basado en sqlmap 1.10.2.17.
+
+* Versión: CyberVaca mod. 1.0.0#dev
+* Ver doc/CHANGELOG.md para resumen completo
+
+---
+
+## [2.7.0] - 2026-02-24 - Ghauri-like Oracle
+
+### Ghauri-like Behavior for Oracle Time-based
+
+Cuando sqlmap usa payloads de estilo Ghauri (Oracle + DBMS_PIPE.RECEIVE_MESSAGE), se comporta como Ghauri:
+
+- **Prioridad Ghauri**: Si se detecta Oracle time-based con heavy query (bloqueado por F5 WAF en extracción), sqlmap cambia automáticamente al payload Ghauri `'||DBMS_PIPE.RECEIVE_MESSAGE(...)||'` para la extracción.
+- **Formato de payload**: Usa `prefix='||` y `suffix=||'` igual que Ghauri.
+- **Preservar valor original**: Con marcador custom (`login=aaaaa*`), el payload queda `aaaaa'||DBMS_PIPE.RECEIVE_MESSAGE(...)||'` en lugar de reemplazar todo el valor.
+- **Fallback**: Si el payload Ghauri falla, vuelve automáticamente al heavy query de sqlmap.
+
+**Archivos:**
+- `lib/core/common.py` – initTechnique(): cambia a Ghauri cuando Oracle + time-based
+- `lib/controller/checks.py` – origValue en boundPayload para custom marker; checkFalsePositives
+- `lib/request/inject.py` – fallback Oracle en getValue()
+- `data/xml/boundaries.xml` – boundary Ghauri (`'||`/`||'`) level=0
+- `data/xml/payloads/time_blind.xml` – tests Ghauri level=0
+
+---
+
+## [2.6.0] - 2026-02-24
 
 ### Version Branding
 
-- **CyberVaca mod. 1.10.2.17#dev** - Version string now displays in banner, `--version` and User-Agent
+- **CyberVaca mod. 1.0.0#dev** - Version string now displays in banner, `--version` and User-Agent
 
 ### Ghauri Payloads for All DBMS
 

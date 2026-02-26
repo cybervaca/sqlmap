@@ -1,3 +1,14 @@
+# CyberVaca mod 1.0.0 (2026-02-26)
+
+Fork basado en sqlmap 1.10.2.17 con mejoras para bypass de WAF (F5, Cloudflare, etc.).
+
+* Integración Ghauri: payloads estilo Ghauri para Oracle time-based (DBMS_PIPE, DBMS_LOCK, USER_LOCK)
+* PayloadsAllTheThings: polyglot, XDBURITYPE, ordsys.ord_dicom, json oracle SQLite, boundaries WAF bypass
+* WAF bypass: opción `--waf-bypass`, tampers oversizedrequest, oraclebetween, oraclechr, etc.
+* Oracle + F5: prioridad Ghauri en extracción, fallback chain, skip false positive cuando WAF detectado
+* Custom injection marker: conserva valor original como Ghauri (`aaaaa'||payload||'`)
+* Versión propia: CyberVaca mod. 1.0.0#dev
+
 # Version 1.10 (2026-01-01)
 
 * [View changes](https://github.com/sqlmapproject/sqlmap/compare/1.9...1.10)
