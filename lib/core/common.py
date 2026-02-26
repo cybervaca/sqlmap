@@ -2843,6 +2843,17 @@ def wasLastResponseDelayed():
             delta += 0.05
         return delta >= 0
 
+def wasLastResponseDelayedSimple():
+    """
+    Simple threshold: True if lastQueryDuration >= conf.timeSec (Ghauri-style, no statistics).
+    Used as fallback when WAF causes high variance and statistical model rejects valid delays.
+    """
+    threadData = getCurrentThreadData()
+    delta = threadData.lastQueryDuration - conf.timeSec
+    if Backend.getIdentifiedDbms() in (DBMS.MYSQL,):
+        delta += 0.05
+    return delta >= 0
+
 def adjustTimeDelay(lastQueryDuration, lowerStdLimit):
     """
     Provides tip for adjusting time delay in time-based data retrieval
@@ -3634,6 +3645,9 @@ def initTechnique(technique=None):
 
         # Oracle time-based: prefer Ghauri-style first; fallback chain DBMS_PIPE > DBMS_LOCK > USER_LOCK > heavy
         if technique == PAYLOAD.TECHNIQUE.TIME and Backend.getIdentifiedDbms() == DBMS.ORACLE and data:
+            waf = (getattr(kb, 'identifiedWafs', None) and kb.identifiedWafs) or hashDBRetrieve(HASHDB_KEYS.CHECK_WAF_RESULT, True)
+            if waf and conf.timeSec < 9:
+                conf.timeSec = 9
             isGhauri = "ghauri" in (getattr(data, "title", None) or "").lower()
             ghauriTests = {}
             if not isGhauri:

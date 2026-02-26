@@ -300,6 +300,10 @@ def bisection(payload, expression, length=None, charsetType=None, firstChar=None
 
             elif len(charTbl) == 1:
                 forgedPayload = safeStringFormat(payload.replace(INFERENCE_GREATER_CHAR, INFERENCE_EQUALS_CHAR), (expressionUnescaped, idx, charTbl[0]))
+                if (conf.debug or conf.verbose >= 4) and logger:
+                    payloadPreview = (forgedPayload or "")[:100] + ("..." if len(forgedPayload or "") > 100 else "")
+                    exprPreview = (expressionUnescaped or "")[:80] + ("..." if len(expressionUnescaped or "") > 80 else "")
+                    logger.debug("inference getChar (single): payload=%r, expression=%r, idx=%d" % (payloadPreview, exprPreview, idx))
                 result = Request.queryPage(forgedPayload, timeBasedCompare=timeBasedCompare, raise404=False)
                 incrementCounter(getTechnique())
 
@@ -369,6 +373,11 @@ def bisection(payload, expression, length=None, charsetType=None, firstChar=None
                             kb.responseTimePayload = falsePayload
                         else:
                             kb.responseTimePayload = None
+
+                    if (conf.debug or conf.verbose >= 4) and logger:
+                        payloadPreview = (forgedPayload or "")[:100] + ("..." if len(forgedPayload or "") > 100 else "")
+                        exprPreview = (expressionUnescaped or "")[:80] + ("..." if len(expressionUnescaped or "") > 80 else "")
+                        logger.debug("inference getChar: payload=%r, expression=%r, idx=%d" % (payloadPreview, exprPreview, idx))
 
                     result = Request.queryPage(forgedPayload, timeBasedCompare=timeBasedCompare, raise404=False)
 

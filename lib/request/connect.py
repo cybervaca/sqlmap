@@ -26,6 +26,7 @@ except ImportError:
         pass
 
 from lib.core.agent import agent
+from lib.core.common import Backend
 from lib.core.common import asciifyUrl
 from lib.core.common import calculateDeltaSeconds
 from lib.core.common import checkFile
@@ -42,6 +43,7 @@ from lib.core.common import getCurrentThreadData
 from lib.core.common import getHeader
 from lib.core.common import getHostHeader
 from lib.core.common import getRequestHeader
+from lib.core.common import hashDBRetrieve
 from lib.core.common import getSafeExString
 from lib.core.common import logHTTPTraffic
 from lib.core.common import openFile
@@ -62,6 +64,7 @@ from lib.core.common import unsafeVariableNaming
 from lib.core.common import urldecode
 from lib.core.common import urlencode
 from lib.core.common import wasLastResponseDelayed
+from lib.core.common import wasLastResponseDelayedSimple
 from lib.core.compat import LooseVersion
 from lib.core.compat import patchHeaders
 from lib.core.compat import xrange
@@ -77,6 +80,8 @@ from lib.core.datatype import AttribDict
 from lib.core.decorators import stackedmethod
 from lib.core.dicts import POST_HINT_CONTENT_TYPES
 from lib.core.enums import ADJUST_TIME_DELAY
+from lib.core.enums import DBMS
+from lib.core.enums import HASHDB_KEYS
 from lib.core.enums import AUTH_TYPE
 from lib.core.enums import CUSTOM_LOGGING
 from lib.core.enums import HINT
@@ -1628,7 +1633,16 @@ class Connect(object):
             kb.testQueryCount += 1
 
         if timeBasedCompare:
-            return wasLastResponseDelayed()
+            waf = (getattr(kb, 'identifiedWafs', None) and kb.identifiedWafs) or hashDBRetrieve(HASHDB_KEYS.CHECK_WAF_RESULT, True)
+            oracle_waf_time = (Backend.getIdentifiedDbms() == DBMS.ORACLE and waf)
+            if getattr(kb, 'ghauriExtractionMode', False) or oracle_waf_time:
+                retVal = wasLastResponseDelayedSimple()
+            else:
+                retVal = wasLastResponseDelayed()
+            if (conf.debug or conf.verbose >= 4) and logger:
+                mode = "simple (Oracle+WAF)" if (getattr(kb, 'ghauriExtractionMode', False) or oracle_waf_time) else "statistical"
+                logger.debug("time-based: lastQueryDuration=%.2fs, timeSec=%d, mode=%s, delayed=%s" % (threadData.lastQueryDuration, conf.timeSec, mode, retVal))
+            return retVal
         elif noteResponseTime:
             kb.responseTimes.setdefault(kb.responseTimeMode, [])
             kb.responseTimes[kb.responseTimeMode].append(threadData.lastQueryDuration)

